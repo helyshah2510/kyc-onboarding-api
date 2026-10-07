@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PanProviderRecord {
+  id         Int    @id @default(autoincrement())
+  pan        String @unique
+  name       String
+  phone      String
+  address    String
+  holderType String
+}
+
+model KycApplication {
+  id              Int               @id @default(autoincrement())
+  userId          Int
+  user            User              @relation(fields: [userId], references: [id])
+  pan             String
+  name            String
+  phone           String
+  address         String
+  holderType      String
+  status          ApplicationStatus @default(DRAFT)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  rejectionReason String?
+
+  phoneOtps    PhoneOtp[]
+  kycDocuments KycDocument[]
+}
+
+model PhoneOtp {
+  id            Int      @id @default(autoincrement())
+  applicationId Int
+  phone         String
+  otp           String
+  expiresAt     DateTime
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  application KycApplication @relation(fields: [applicationId], references: [id])
+}
+
+model KycDocument {
+  id            Int          @id @default(autoincrement())
+  applicationId Int
+  documentType  DocumentType
+  fileName      String
+  filePath      String
+  uploadedAt    DateTime     @default(now())
+
+  application KycApplication @relation(fields: [applicationId], references: [id])
+}
+
+enum DocumentType {
+  AADHAAR
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  VERIFIED
+  APPROVED
+  REJECTED
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String   @unique
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications KycApplication[]
+}
