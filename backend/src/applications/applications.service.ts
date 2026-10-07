@@ -11,7 +11,7 @@ export class ApplicationsService {
         private panService: PanService,
     ) { }
 
-    async createApplication(userId:number,pan: string, holderType: HolderType) {
+    async createApplication(userId:number, pan: string, holderType: HolderType) {
         const panResult = await this.panService.validatePan(
             pan,
             holderType,
