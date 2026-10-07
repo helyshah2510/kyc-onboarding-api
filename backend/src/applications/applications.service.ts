@@ -11,7 +11,7 @@ export class ApplicationsService {
         private panService: PanService,
     ) { }
 
-    async createApplication(pan: string, holderType: HolderType) {
+    async createApplication(userId:number, pan: string, holderType: HolderType) {
         const panResult = await this.panService.validatePan(
             pan,
             holderType,
@@ -26,6 +26,7 @@ export class ApplicationsService {
 
         const application = await this.prisma.kycApplication.create({
             data: {
+                userId,
                 pan,
                 name: panResult.name!,
                 phone: panResult.phone!,
