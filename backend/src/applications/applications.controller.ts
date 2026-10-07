@@ -12,6 +12,7 @@ export class ApplicationsController {
     @Post()
     createApplication(@Body() dto: VerifyPanDto) {
         return this.applicationsService.createApplication(
+            1,
             dto.pan,
             dto.holderType,
         );
