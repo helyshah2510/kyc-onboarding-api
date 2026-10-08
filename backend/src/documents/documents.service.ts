@@ -1,4 +1,4 @@
-import { Injectable,NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -8,19 +8,24 @@ export class DocumentsService {
     constructor(private readonly prisma: PrismaService) { }
 
     async uploadDocument(
-        userId:number,
+        userId: number,
         applicationId: number,
         file: Express.Multer.File,
     ) {
         // Does this application exist AND belong to the logged-in user?
         const application = await this.prisma.kycApplication.findUnique({
-            where: {
-                id: applicationId,
-            },
+            where: { id: applicationId },
         });
 
-        if (!application || application.userId!==userId) {
+        if (!application || application.userId !== userId) {
             throw new NotFoundException('Application not found');
+        }
+
+        // Only DRAFT or REJECTED applications can be changed
+        if (application.status !== 'DRAFT' && application.status !== 'REJECTED') {
+            throw new BadRequestException(
+                `This application can no longer be changed (current status: ${application.status})`,
+            );
         }
 
         if (!file) {
@@ -45,7 +50,6 @@ export class DocumentsService {
         });
 
         const fileName = `aadhaar-${Date.now()}.png`;
-
         const uploadDir = join(process.cwd(), 'uploads');
 
         await mkdir(uploadDir, { recursive: true });
@@ -69,9 +73,7 @@ export class DocumentsService {
 
             // Update the existing database row
             document = await this.prisma.kycDocument.update({
-                where: {
-                    id: existingDocument.id,
-                },
+                where: { id: existingDocument.id },
                 data: {
                     fileName,
                     filePath,

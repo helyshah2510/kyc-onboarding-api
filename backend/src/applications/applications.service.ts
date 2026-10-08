@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PanService } from '../pan/pan.service.js';
 import type { HolderType } from '../pan/pan.constants.js';
@@ -22,6 +22,17 @@ export class ApplicationsService {
         return application;
     }
 
+    // Same check, and the application must still be changeable by the user
+    private async getEditableApplication(applicationId: number, userId: number) {
+        const application = await this.getOwnedApplication(applicationId, userId);
+        if (application.status !== 'DRAFT' && application.status !== 'REJECTED') {
+            throw new BadRequestException(
+                `This application can no longer be changed (current status: ${application.status})`,
+            );
+        }
+        return application;
+    }
+
     async createApplication(userId: number, pan: string, holderType: HolderType) {
         const panResult = await this.panService.validatePan(pan, holderType);
 
@@ -40,13 +51,37 @@ export class ApplicationsService {
                 phone: panResult.phone!,
                 address: panResult.address!,
                 holderType: panResult.holder!,
-                status: 'VERIFIED',
+                status: 'DRAFT',
             },
         });
     }
 
+    // ---- the user's own applications ----
+
+    listMine(userId: number) {
+        return this.prisma.kycApplication.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                pan: true,
+                name: true,
+                status: true,
+                rejectionReason: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        });
+    }
+
+    getMine(userId: number, applicationId: number) {
+        return this.getOwnedApplication(applicationId, userId);
+    }
+
+    // ---- editing (only DRAFT or REJECTED) ----
+
     async requestPhoneOtp(userId: number, applicationId: number, phone: string) {
-        const application = await this.getOwnedApplication(applicationId, userId);
+        const application = await this.getEditableApplication(applicationId, userId);
 
         if (application.phone === phone) {
             return {
@@ -76,7 +111,7 @@ export class ApplicationsService {
     }
 
     async verifyPhoneOtp(userId: number, applicationId: number, otp: string) {
-        await this.getOwnedApplication(applicationId, userId);
+        await this.getEditableApplication(applicationId, userId);
 
         const otpRecord = await this.prisma.phoneOtp.findFirst({
             where: {
@@ -125,7 +160,7 @@ export class ApplicationsService {
         applicationId: number,
         dto: UpdatePersonalDetailsDto,
     ) {
-        await this.getOwnedApplication(applicationId, userId);
+        await this.getEditableApplication(applicationId, userId);
 
         return this.prisma.kycApplication.update({
             where: { id: applicationId },
@@ -133,8 +168,12 @@ export class ApplicationsService {
         });
     }
 
+    // ---- "Complete application" ----
+    // DRAFT    -> VERIFIED   (first time)
+    // REJECTED -> SUBMITTED  (sent back after a fix, reason cleared)
+
     async submitApplication(userId: number, applicationId: number) {
-        await this.getOwnedApplication(applicationId, userId);
+        const application = await this.getEditableApplication(applicationId, userId);
 
         const document = await this.prisma.kycDocument.findFirst({
             where: {
@@ -150,14 +189,21 @@ export class ApplicationsService {
             };
         }
 
+        const wasRejected = application.status === 'REJECTED';
+
         const updatedApplication = await this.prisma.kycApplication.update({
             where: { id: applicationId },
-            data: { status: 'SUBMITTED' },
+            data: {
+                status: wasRejected ? 'SUBMITTED' : 'VERIFIED',
+                rejectionReason: null,
+            },
         });
 
         return {
             success: true,
-            message: 'KYC submitted successfully',
+            message: wasRejected
+                ? 'KYC resubmitted successfully'
+                : 'KYC submitted successfully',
             application: updatedApplication,
         };
     }

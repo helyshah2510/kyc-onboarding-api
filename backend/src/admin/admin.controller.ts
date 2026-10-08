@@ -1,0 +1,42 @@
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
+import { AdminService } from './admin.service.js';
+import { RejectApplicationDto } from './dto/reject-application.dto.js';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guard/roles.guard.js';
+import { Roles } from '../auth/decorator/roles.decorator.js';
+import { Query } from '@nestjs/common';
+import { ListApplicationsQueryDto } from './dto/list-applications-query.dto.js';
+
+@ApiTags('Admin')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
+@Controller('admin/applications')
+export class AdminController {
+    constructor(private readonly adminService: AdminService) { }
+
+    @Get()
+    list(@Query() query: ListApplicationsQueryDto) {
+        return this.adminService.listApplications(query.status);
+    }
+
+    @Get(':id')
+    getOne(@Param('id', ParseIntPipe) id: number) {
+        return this.adminService.getApplication(id);
+    }
+
+    @Patch(':id/approve')
+    approve(@Param('id', ParseIntPipe) id: number) {
+        return this.adminService.approve(id);
+    }
+
+    @Patch(':id/reject')
+    reject(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: RejectApplicationDto,
+    ) {
+        return this.adminService.reject(id, dto.reason);
+    }
+}

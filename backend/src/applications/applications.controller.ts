@@ -1,4 +1,4 @@
-import {Body,Controller,Param,Post,Patch,ParseIntPipe,UseGuards,Req,} from '@nestjs/common';
+import {Body,Controller,Get,Param,Post,Patch,ParseIntPipe,UseGuards,Req,} from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApplicationsService } from './applications.service.js';
 import { VerifyPanDto } from '../pan/dto/verify-pan.dto.js';
@@ -24,6 +24,19 @@ export class ApplicationsController {
             dto.pan,
             dto.holderType,
         );
+    }
+
+    @Get()
+    listMine(@Req() req: AuthenticatedRequest) {
+        return this.applicationsService.listMine(req.user!.sub);
+    }
+
+    @Get(':id')
+    getOne(
+        @Req() req: AuthenticatedRequest,
+        @Param('id', ParseIntPipe) id: number,
+    ) {
+        return this.applicationsService.getMine(req.user!.sub, id);
     }
 
     @Post(':id/phone/request-otp')
