@@ -4,6 +4,8 @@ import { AuthService } from './auth.service.js';
 import { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import { CompleteRegistrationDto } from './dto/complete-registration.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { RequestLoginDto } from './dto/request-login-otp.dto.js';
+import { VerifyLoginOtpDto } from './dto/verify-login-otp.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -16,16 +18,26 @@ export class AuthController {
 
     @Post('register/verify-otp')
     verifyOtp(@Body() dto:VerifyOtpDto){
-        return this.authService.verifyOtp(dto)
+        return this.authService.verifyOtp(dto);
     }
 
     @Post('register/complete')
     complete(@Body() dto:CompleteRegistrationDto){
-        return this.authService.completeRegistration(dto)
+        return this.authService.completeRegistration(dto);
     }
 
     @Post('login')
     login(@Body()dto:LoginDto){
         return this.authService.login(dto);
+    }
+
+    @Post('login/otp/request')
+    requestLoginOtp(@Body()dto:RequestLoginDto){
+        return this.authService.requestLoginDto(dto);
+    }
+
+    @Post('login/otp/verify')
+    verifyLoginOtp(@Body()dto:VerifyLoginOtpDto){
+        return this.authService.verifyLoginOtp(dto);
     }
 }
