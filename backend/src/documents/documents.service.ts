@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -8,20 +8,19 @@ export class DocumentsService {
     constructor(private readonly prisma: PrismaService) { }
 
     async uploadDocument(
+        userId:number,
         applicationId: number,
         file: Express.Multer.File,
     ) {
+        // Does this application exist AND belong to the logged-in user?
         const application = await this.prisma.kycApplication.findUnique({
             where: {
                 id: applicationId,
             },
         });
 
-        if (!application) {
-            return {
-                success: false,
-                message: 'Application not found',
-            };
+        if (!application || application.userId!==userId) {
+            throw new NotFoundException('Application not found');
         }
 
         if (!file) {
