@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PanService } from '../pan/pan.service.js';
 import type { HolderType } from '../pan/pan.constants.js';
@@ -11,11 +11,19 @@ export class ApplicationsService {
         private panService: PanService,
     ) { }
 
-    async createApplication(userId:number, pan: string, holderType: HolderType) {
-        const panResult = await this.panService.validatePan(
-            pan,
-            holderType,
-        );
+    // Finds the application AND checks it belongs to this user
+    private async getOwnedApplication(applicationId: number, userId: number) {
+        const application = await this.prisma.kycApplication.findUnique({
+            where: { id: applicationId },
+        });
+        if (!application || application.userId !== userId) {
+            throw new NotFoundException('Application not found');
+        }
+        return application;
+    }
+
+    async createApplication(userId: number, pan: string, holderType: HolderType) {
+        const panResult = await this.panService.validatePan(pan, holderType);
 
         if (!panResult.verified) {
             return {
@@ -24,7 +32,7 @@ export class ApplicationsService {
             };
         }
 
-        const application = await this.prisma.kycApplication.create({
+        return this.prisma.kycApplication.create({
             data: {
                 userId,
                 pan,
@@ -35,21 +43,10 @@ export class ApplicationsService {
                 status: 'VERIFIED',
             },
         });
-
-        return application;
     }
 
-    async requestPhoneOtp(applicationId: number, phone: string) {
-        const application = await this.prisma.kycApplication.findUnique({
-            where: { id: applicationId },
-        });
-
-        if (!application) {
-            return {
-                success: false,
-                message: 'Application not found',
-            };
-        }
+    async requestPhoneOtp(userId: number, applicationId: number, phone: string) {
+        const application = await this.getOwnedApplication(applicationId, userId);
 
         if (application.phone === phone) {
             return {
@@ -59,7 +56,6 @@ export class ApplicationsService {
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
         await this.prisma.phoneOtp.create({
@@ -79,7 +75,9 @@ export class ApplicationsService {
         };
     }
 
-    async verifyPhoneOtp(applicationId: number, otp: string) {
+    async verifyPhoneOtp(userId: number, applicationId: number, otp: string) {
+        await this.getOwnedApplication(applicationId, userId);
+
         const otpRecord = await this.prisma.phoneOtp.findFirst({
             where: {
                 applicationId,
@@ -108,16 +106,11 @@ export class ApplicationsService {
         await this.prisma.$transaction([
             this.prisma.kycApplication.update({
                 where: { id: applicationId },
-                data: {
-                    phone: otpRecord.phone,
-                },
+                data: { phone: otpRecord.phone },
             }),
-
             this.prisma.phoneOtp.update({
                 where: { id: otpRecord.id },
-                data: {
-                    verified: true,
-                },
+                data: { verified: true },
             }),
         ]);
 
@@ -128,44 +121,20 @@ export class ApplicationsService {
     }
 
     async updatePersonalDetails(
+        userId: number,
         applicationId: number,
         dto: UpdatePersonalDetailsDto,
     ) {
-        const application = await this.prisma.kycApplication.findUnique({
+        await this.getOwnedApplication(applicationId, userId);
+
+        return this.prisma.kycApplication.update({
             where: { id: applicationId },
+            data: { address: dto.address },
         });
-
-        if (!application) {
-            return {
-                success: false,
-                message: 'Application not found',
-            };
-        }
-
-        const updatedApplication =
-            await this.prisma.kycApplication.update({
-                where: { id: applicationId },
-                data: {
-                    address: dto.address,
-                },
-            });
-
-        return updatedApplication;
     }
 
-    async submitApplication(applicationId: number) {
-        const application = await this.prisma.kycApplication.findUnique({
-            where: {
-                id: applicationId,
-            },
-        });
-
-        if (!application) {
-            return {
-                success: false,
-                message: 'Application not found',
-            };
-        }
+    async submitApplication(userId: number, applicationId: number) {
+        await this.getOwnedApplication(applicationId, userId);
 
         const document = await this.prisma.kycDocument.findFirst({
             where: {
@@ -181,15 +150,10 @@ export class ApplicationsService {
             };
         }
 
-        const updatedApplication =
-            await this.prisma.kycApplication.update({
-                where: {
-                    id: applicationId,
-                },
-                data: {
-                    status: 'SUBMITTED',
-                },
-            });
+        const updatedApplication = await this.prisma.kycApplication.update({
+            where: { id: applicationId },
+            data: { status: 'SUBMITTED' },
+        });
 
         return {
             success: true,

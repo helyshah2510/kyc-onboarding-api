@@ -1,10 +1,10 @@
-import { Body, Controller, Param, Post, Patch,ParseIntPipe, UseGuards, Req } from '@nestjs/common';
+import {Body,Controller,Param,Post,Patch,ParseIntPipe,UseGuards,Req,} from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApplicationsService } from './applications.service.js';
 import { VerifyPanDto } from '../pan/dto/verify-pan.dto.js';
 import { RequestPhoneOtpDto } from './dto/request-phone-otp.dto.js';
 import { VerifyPhoneOtpDto } from './dto/verify-phone-otp.dto.js';
 import { UpdatePersonalDetailsDto } from './dto/update-personal-details.dto.js';
-import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard.js';
 import type { AuthenticatedRequest } from '../auth/guard/jwt-auth.guard.js';
 
@@ -15,7 +15,10 @@ export class ApplicationsController {
     constructor(private readonly applicationsService: ApplicationsService) { }
 
     @Post()
-    createApplication(@Req() req:AuthenticatedRequest ,@Body() dto: VerifyPanDto) {
+    createApplication(
+        @Req() req: AuthenticatedRequest,
+        @Body() dto: VerifyPanDto,
+    ) {
         return this.applicationsService.createApplication(
             req.user!.sub,
             dto.pan,
@@ -25,41 +28,36 @@ export class ApplicationsController {
 
     @Post(':id/phone/request-otp')
     requestPhoneOtp(
-        @Param('id') id: string,
+        @Req() req: AuthenticatedRequest,
+        @Param('id', ParseIntPipe) id: number,
         @Body() dto: RequestPhoneOtpDto,
     ) {
-        return this.applicationsService.requestPhoneOtp(
-            Number(id),
-            dto.phone,
-        );
+        return this.applicationsService.requestPhoneOtp(req.user!.sub, id, dto.phone);
     }
 
     @Post(':id/phone/verify-otp')
     verifyPhoneOtp(
-        @Param('id') id: string,
+        @Req() req: AuthenticatedRequest,
+        @Param('id', ParseIntPipe) id: number,
         @Body() dto: VerifyPhoneOtpDto,
     ) {
-        return this.applicationsService.verifyPhoneOtp(
-            Number(id),
-            dto.otp,
-        );
+        return this.applicationsService.verifyPhoneOtp(req.user!.sub, id, dto.otp);
     }
 
     @Patch(':id/personal-details')
     updatePersonalDetails(
-        @Param('id') id: string,
+        @Req() req: AuthenticatedRequest,
+        @Param('id', ParseIntPipe) id: number,
         @Body() dto: UpdatePersonalDetailsDto,
     ) {
-        return this.applicationsService.updatePersonalDetails(
-            Number(id),
-            dto,
-        );
+        return this.applicationsService.updatePersonalDetails(req.user!.sub, id, dto);
     }
 
     @Post(':id/submit')
     submitApplication(
-        @Param('id', ParseIntPipe) applicationId: number,
+        @Req() req: AuthenticatedRequest,
+        @Param('id', ParseIntPipe) id: number,
     ) {
-        return this.applicationsService.submitApplication(applicationId);
+        return this.applicationsService.submitApplication(req.user!.sub, id);
     }
 }
