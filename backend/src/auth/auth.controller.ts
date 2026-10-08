@@ -3,6 +3,7 @@ import { RegisterDto } from './dto/register.dto.js';
 import { AuthService } from './auth.service.js';
 import { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import { CompleteRegistrationDto } from './dto/complete-registration.dto.js';
+import { LoginDto } from './dto/login.dto.js';
 
 @Controller('auth')
 export class AuthController {
@@ -21,5 +22,10 @@ export class AuthController {
     @Post('register/complete')
     complete(@Body() dto:CompleteRegistrationDto){
         return this.authService.completeRegistration(dto)
+    }
+
+    @Post('login')
+    login(@Body()dto:LoginDto){
+        return this.authService.login(dto);
     }
 }

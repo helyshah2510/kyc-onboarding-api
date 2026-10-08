@@ -1,14 +1,20 @@
-import { Injectable,BadRequestException,ConflictException} from '@nestjs/common';
+import { Injectable,BadRequestException,ConflictException,UnauthorizedException} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { randomInt } from 'node:crypto';
 import { RegisterDto } from './dto/register.dto.js';
 import { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import { CompleteRegistrationDto } from './dto/complete-registration.dto.js';
+import { LoginDto } from './dto/login.dto.js';
+import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcrypt';
+import { access } from 'node:fs';
 
 @Injectable()
 export class AuthService {
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        private prisma: PrismaService,
+        private jwtService:JwtService
+    ) {}
 
     private async assertEmailAndPhoneAvailable(email:string,phone:string){
         const existingEmail= await this.prisma.user.findUnique({
@@ -109,5 +115,25 @@ export class AuthService {
             }),
         ]);
         return user;
+    }
+
+    //Login
+    private async singleToken(user:{id:number;role:string;}){
+        const payload={sub:user.id,role:user.role};
+        return {accessToken:await this.jwtService.signAsync(payload)};
+    }
+
+    async login(dto:LoginDto){
+        const user= await this.prisma.user.findUnique({
+            where:{email:dto.email},
+        });
+        if(!user){
+            throw new UnauthorizedException('Invalid Email or password');
+        }
+        const isPasswordCorrect= await bcrypt.compare(dto.password,user.password);
+        if(!isPasswordCorrect){
+            throw new UnauthorizedException('Invalid Email or password');
+        }
+        return this.singleToken(user);
     }
 }
