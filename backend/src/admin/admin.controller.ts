@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards,StreamableFile, UseInterceptors, UploadedFile} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards,StreamableFile, UseInterceptors, UploadedFile, Delete} from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiProduces, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { AdminService } from './admin.service.js';
@@ -78,5 +78,10 @@ export class AdminController {
         @UploadedFile()file:Express.Multer.File,
     ){
         return this.adminService.replaceDocuments(id,file);
+    }
+
+    @Delete(':id/delete')
+    delete(@Param('id',ParseIntPipe)id:number){
+        return this.adminService.deleteApplication(id);
     }
 }

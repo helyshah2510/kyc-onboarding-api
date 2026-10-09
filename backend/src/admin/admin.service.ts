@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ApplicationStatus } from '@prisma/client';
-import { access } from 'node:fs/promises';
+import { access,unlink } from 'node:fs/promises';
 import { DocumentsService } from '../documents/documents.service.js';
 
 @Injectable()
@@ -107,5 +107,34 @@ export class AdminService {
             message:'Document replaced successfully',
             document,
         };
+    }
+
+    async deleteApplication(id:number){
+        const application=await this.prisma.kycApplication.findUnique({
+            where:{id},
+            include:{kycDocuments:true},
+        });
+        if(!application){
+            throw new NotFoundException('Application not found');
+        }
+        //1. Database first, all or nothing
+        await this.prisma.$transaction([
+            this.prisma.phoneOtp.deleteMany({where:{applicationId:id}}),
+            this.prisma.kycDocument.deleteMany({where:{applicationId:id}}),
+            this.prisma.kycApplication.deleteMany({where:{id}}),
+        ]);
+
+        //2. Files only after the database succeded
+        for(const document of application.kycDocuments){
+            try{
+                await unlink(document.filePath);
+            }catch(error:any){
+                if(error.code!=='ENOENT'){
+                    throw error;
+                }
+            }
+        }
+
+        return {message:'Application deleted successfully'};
     }
 }
