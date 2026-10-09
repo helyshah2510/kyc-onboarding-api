@@ -7,6 +7,7 @@ import { join } from 'node:path';
 export class DocumentsService {
     constructor(private readonly prisma: PrismaService) { }
 
+    //user counter checks who you are and whether  the application is editable or not 
     async uploadDocument(
         userId: number,
         applicationId: number,
@@ -28,18 +29,21 @@ export class DocumentsService {
             );
         }
 
+        const document = await this.saveAdhaarFile(applicationId, file);
+        return {
+            success: true,
+            message: 'Document uploaded successfully',
+            document,
+        };
+    }
+    // SHARED photocopier: no permission checks here, the caller must do them first
+    async saveAdhaarFile(applicationId: number, file: Express.Multer.File) {
         if (!file) {
-            return {
-                success: false,
-                message: 'File is required',
-            };
+            throw new BadRequestException('File is required');
         }
 
         if (file.mimetype !== 'image/png') {
-            return {
-                success: false,
-                message: 'Only PNG files are allowed',
-            };
+            throw new BadRequestException('Only PNG files are allowed');
         }
 
         const existingDocument = await this.prisma.kycDocument.findFirst({
@@ -59,8 +63,6 @@ export class DocumentsService {
         // Save the new physical file first
         await writeFile(filePath, file.buffer);
 
-        let document;
-
         if (existingDocument) {
             // Remove the old physical file
             try {
@@ -72,7 +74,7 @@ export class DocumentsService {
             }
 
             // Update the existing database row
-            document = await this.prisma.kycDocument.update({
+            return this.prisma.kycDocument.update({
                 where: { id: existingDocument.id },
                 data: {
                     fileName,
@@ -80,22 +82,15 @@ export class DocumentsService {
                     uploadedAt: new Date(),
                 },
             });
-        } else {
-            // No Aadhaar exists yet, so create the first row
-            document = await this.prisma.kycDocument.create({
-                data: {
-                    applicationId,
-                    documentType: 'AADHAAR',
-                    fileName,
-                    filePath,
-                },
-            });
         }
-
-        return {
-            success: true,
-            message: 'Document uploaded successfully',
-            document,
-        };
+        // No Aadhaar exists yet, so create the first row
+        return this.prisma.kycDocument.create({
+            data: {
+                applicationId,
+                documentType: 'AADHAAR',
+                fileName,
+                filePath,
+            },
+        });
     }
 }

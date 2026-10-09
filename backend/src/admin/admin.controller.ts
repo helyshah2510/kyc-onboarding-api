@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards,StreamableFile} from '@nestjs/common';
-import { ApiBearerAuth, ApiProduces, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards,StreamableFile, UseInterceptors, UploadedFile} from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiProduces, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { AdminService } from './admin.service.js';
 import { RejectApplicationDto } from './dto/reject-application.dto.js';
@@ -10,6 +10,7 @@ import { Query } from '@nestjs/common';
 import { ListApplicationsQueryDto } from './dto/list-applications-query.dto.js';
 import { createReadStream } from 'node:fs';
 import { UpdateAddressDto } from './dto/update-address.dto.js';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -59,5 +60,23 @@ export class AdminController {
         @Body()dto:UpdateAddressDto,
     ){
         return this.adminService.updateAddress(id,dto.address);
+    }
+
+    @Patch(':id/documents')
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema:{
+            type:'object',
+            properties:{
+                file:{type:'string',format:'binary'},
+            },
+        },
+    })
+    @UseInterceptors(FileInterceptor('file'))
+    replaceDocument(
+        @Param('id',ParseIntPipe) id:number,
+        @UploadedFile()file:Express.Multer.File,
+    ){
+        return this.adminService.replaceDocuments(id,file);
     }
 }

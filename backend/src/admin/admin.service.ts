@@ -2,10 +2,14 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ApplicationStatus } from '@prisma/client';
 import { access } from 'node:fs/promises';
+import { DocumentsService } from '../documents/documents.service.js';
 
 @Injectable()
 export class AdminService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private documentsServicce:DocumentsService,
+    ) { }
 
     // only verified and SUBMITTED applications can be reviewed
     private async getReviewableApplication(id: number) {
@@ -94,5 +98,14 @@ export class AdminService {
             where:{id},
             data:{address},
         });
+    }
+
+    async replaceDocuments(id:number,file:Express.Multer.File) {
+        await this.getReviewableApplication(id);
+        const document=await this.documentsServicce.saveAdhaarFile(id,file);
+        return{
+            message:'Document replaced successfully',
+            document,
+        };
     }
 }
