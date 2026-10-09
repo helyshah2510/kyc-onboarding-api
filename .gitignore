@@ -3,34 +3,38 @@
 # ============================================
 node_modules/
 .pnp
-.pnp.js
-
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
 # ============================================
-# Compiled output
+# Compiled Output & Production Builds
 # ============================================
 dist/
 build/
-
-# TypeScript build cache
-*.tsbuildinfo
-
+.next/
+out/
 
 # ============================================
-# Generated files
+# Generated Files
 # ============================================
 generated/
-
+next-env.d.ts
 
 # ============================================
-# Environment variables
+# TypeScript Build Cache
+# ============================================
+*.tsbuildinfo
+
+# ============================================
+# Environment Variables
 # ============================================
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
+.env.*
+!.env.example
 
 # ============================================
 # Logs
@@ -43,41 +47,36 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-
 # ============================================
-# Runtime data
+# Runtime Data
 # ============================================
 pids/
 *.pid
 *.seed
 *.pid.lock
 
-
 # ============================================
-# Temporary files
+# Temporary Files
 # ============================================
 .temp/
 .tmp/
 temp/
 tmp/
 
-
 # ============================================
-# Test / coverage
+# Testing & Coverage
 # ============================================
 coverage/
 .nyc_output/
 
-
 # ============================================
-# OS files
+# OS Files
 # ============================================
 .DS_Store
 Thumbs.db
 
-
 # ============================================
-# IDEs / Editors
+# IDEs & Editors
 # ============================================
 .idea/
 .project
@@ -93,14 +92,22 @@ Thumbs.db
 !.vscode/tasks.json
 !.vscode/extensions.json
 
+# ============================================
+# Certificates & Keys
+# ============================================
+*.pem
 
 # ============================================
-# Diagnostic reports
+# Diagnostic Reports
 # ============================================
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
+# ============================================
+# Deployment
+# ============================================
+.vercel
 
 # ============================================
-# KYC uploaded documents
+# KYC Uploaded Documents
 # ============================================
 uploads/
