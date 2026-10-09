@@ -1,12 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ApplicationStatus } from '@prisma/client';
+import { access } from 'node:fs/promises';
 
 @Injectable()
 export class AdminService {
     constructor(private prisma: PrismaService) { }
 
-    // only SUBMITTED applications can be reviewed
+    // only verified and SUBMITTED applications can be reviewed
     private async getReviewableApplication(id: number) {
         const application = await this.prisma.kycApplication.findUnique({
             where: { id },
@@ -14,9 +15,9 @@ export class AdminService {
         if (!application) {
             throw new NotFoundException('Application not found');
         }
-        if (application.status !== 'SUBMITTED') {
+        if (application.status!=='VERIFIED' && application.status !== 'SUBMITTED') {
             throw new BadRequestException(
-                `Only submitted applications can be reviewed (current status: ${application.status})`,
+                `Only verified and submitted applications can be reviewed (current status: ${application.status})`,
             );
         }
         return application;
@@ -51,6 +52,24 @@ export class AdminService {
             throw new NotFoundException('Application not found');
         }
         return application;
+    }
+
+    async getAadhaarDocument(applicationId: number) {
+        const document = await this.prisma.kycDocument.findFirst({
+            where: { applicationId, documentType: 'AADHAAR' },
+        });
+        if (!document) {
+            throw new NotFoundException('No Aadhaar image found for this application');
+        }
+
+        // The database says a file exists, but is it really on disk?
+        try {
+            await access(document.filePath);
+        } catch {
+            throw new NotFoundException('Image file is missing on the server');
+        }
+
+        return document;
     }
 
     async approve(id: number) {
