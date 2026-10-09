@@ -3,18 +3,21 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { ApplicationStatus } from '@prisma/client';
 import { access,unlink } from 'node:fs/promises';
 import { DocumentsService } from '../documents/documents.service.js';
+import { NotificationsService } from './notifications/notifications.service.js';
 
 @Injectable()
 export class AdminService {
     constructor(
         private prisma: PrismaService,
         private documentsServicce:DocumentsService,
+        private notificationsService:NotificationsService,
     ) { }
 
     // only verified and SUBMITTED applications can be reviewed
     private async getReviewableApplication(id: number) {
         const application = await this.prisma.kycApplication.findUnique({
             where: { id },
+            include:{user:{select:{name:true,email:true,phone:true}}}
         });
         if (!application) {
             throw new NotFoundException('Application not found');
@@ -77,19 +80,29 @@ export class AdminService {
     }
 
     async approve(id: number) {
-        await this.getReviewableApplication(id);
-        return this.prisma.kycApplication.update({
+        const application=await this.getReviewableApplication(id);
+        const updated=await this.prisma.kycApplication.update({
             where: { id },
             data: { status: 'APPROVED', rejectionReason: null },
         });
+        this.notificationsService.send(
+            application.user,
+            'your Kyc application has been approved',
+        )
+        return updated;
     }
 
     async reject(id: number, reason: string) {
-        await this.getReviewableApplication(id);
-        return this.prisma.kycApplication.update({
+        const application=await this.getReviewableApplication(id);
+        const updated= await this.prisma.kycApplication.update({
             where: { id },
             data: { status: 'REJECTED', rejectionReason: reason },
         });
+        this.notificationsService.send(
+            application.user,
+            'your Kyc application has been rejected reason ${reason}',
+        );
+        return updated;
     }
 
     async updateAddress(id:number,address:string){
