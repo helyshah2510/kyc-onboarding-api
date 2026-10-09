@@ -111,3 +111,15 @@ model LoginOtp {
 
   user User @relation(fields: [userId], references: [id])
 }
+
+model AuditLog {
+  id            Int      @id @default(autoincrement())
+  adminId       Int
+  action        String
+  applicationId Int
+  details       Json?
+  createdAt     DateTime @default(now())
+
+  @@index([applicationId])
+  @@index([adminId])
+}

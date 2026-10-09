@@ -1,28 +1,30 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ApplicationStatus } from '@prisma/client';
-import { access,unlink } from 'node:fs/promises';
+import { access, unlink } from 'node:fs/promises';
 import { DocumentsService } from '../documents/documents.service.js';
 import { NotificationsService } from './notifications/notifications.service.js';
+import { AuditService } from './audit-log/audit.service.js';
 
 @Injectable()
 export class AdminService {
     constructor(
         private prisma: PrismaService,
-        private documentsServicce:DocumentsService,
-        private notificationsService:NotificationsService,
+        private documentsServicce: DocumentsService,
+        private notificationsService: NotificationsService,
+        private auditService: AuditService,
     ) { }
 
     // only verified and SUBMITTED applications can be reviewed
     private async getReviewableApplication(id: number) {
         const application = await this.prisma.kycApplication.findUnique({
             where: { id },
-            include:{user:{select:{name:true,email:true,phone:true}}}
+            include: { user: { select: { name: true, email: true, phone: true } } }
         });
         if (!application) {
             throw new NotFoundException('Application not found');
         }
-        if (application.status!=='VERIFIED' && application.status !== 'SUBMITTED') {
+        if (application.status !== 'VERIFIED' && application.status !== 'SUBMITTED') {
             throw new BadRequestException(
                 `Only verified and submitted applications can be reviewed (current status: ${application.status})`,
             );
@@ -79,12 +81,16 @@ export class AdminService {
         return document;
     }
 
-    async approve(id: number) {
-        const application=await this.getReviewableApplication(id);
-        const updated=await this.prisma.kycApplication.update({
+    async approve(id: number, adminId: number) {
+        const application = await this.getReviewableApplication(id);
+        const updated = await this.prisma.kycApplication.update({
             where: { id },
             data: { status: 'APPROVED', rejectionReason: null },
         });
+        await this.auditService.record(adminId, 'APPLICATION_APPROVED', id, {
+            previousStatus: application.status,
+        });
+
         this.notificationsService.send(
             application.user,
             'your Kyc application has been approved',
@@ -92,12 +98,17 @@ export class AdminService {
         return updated;
     }
 
-    async reject(id: number, reason: string) {
-        const application=await this.getReviewableApplication(id);
-        const updated= await this.prisma.kycApplication.update({
+    async reject(id: number, reason: string, adminId: number) {
+        const application = await this.getReviewableApplication(id);
+        const updated = await this.prisma.kycApplication.update({
             where: { id },
             data: { status: 'REJECTED', rejectionReason: reason },
         });
+
+        await this.auditService.record(adminId, 'APPLICATION_REJECTED', id, {
+            previousStatus: application.status,
+        })
+
         this.notificationsService.send(
             application.user,
             'your Kyc application has been rejected reason ${reason}',
@@ -105,49 +116,63 @@ export class AdminService {
         return updated;
     }
 
-    async updateAddress(id:number,address:string){
-        await this.getReviewableApplication(id);
-        return this.prisma.kycApplication.update({
-            where:{id},
-            data:{address},
+    async updateAddress(id: number, address: string, adminId: number) {
+        const application = await this.getReviewableApplication(id);
+        const newAddress = address.trim();
+        const updated = await this.prisma.kycApplication.update({
+            where: { id },
+            data: { address },
         });
+        await this.auditService.record(adminId, 'ADDRESS_UPDATED', id,{
+            oldAddress: application.address,
+            newAddress,
+        });
+        return updated;
     }
 
-    async replaceDocuments(id:number,file:Express.Multer.File) {
+    async replaceDocuments(id: number, file: Express.Multer.File, adminId: number) {
         await this.getReviewableApplication(id);
-        const document=await this.documentsServicce.saveAdhaarFile(id,file);
-        return{
-            message:'Document replaced successfully',
+        const document = await this.documentsServicce.saveAdhaarFile(id, file);
+        await this.auditService.record(adminId, 'DOCUMENT_REPLACED', id, {
+            newFileName: document.fileName,
+        });
+        return {
+            message: 'Document replaced successfully',
             document,
         };
     }
 
-    async deleteApplication(id:number){
-        const application=await this.prisma.kycApplication.findUnique({
-            where:{id},
-            include:{kycDocuments:true},
+    async deleteApplication(id: number, adminId: number) {
+        const application = await this.prisma.kycApplication.findUnique({
+            where: { id },
+            include: { kycDocuments: true },
         });
-        if(!application){
+        if (!application) {
             throw new NotFoundException('Application not found');
         }
         //1. Database first, all or nothing
         await this.prisma.$transaction([
-            this.prisma.phoneOtp.deleteMany({where:{applicationId:id}}),
-            this.prisma.kycDocument.deleteMany({where:{applicationId:id}}),
-            this.prisma.kycApplication.deleteMany({where:{id}}),
+            this.prisma.phoneOtp.deleteMany({ where: { applicationId: id } }),
+            this.prisma.kycDocument.deleteMany({ where: { applicationId: id } }),
+            this.prisma.kycApplication.deleteMany({ where: { id } }),
         ]);
 
+        await this.auditService.record(adminId, 'APPLICATION_DELETED', id, {
+            pan: application.pan,
+            previousStatus: application.status,
+        });
+
         //2. Files only after the database succeded
-        for(const document of application.kycDocuments){
-            try{
+        for (const document of application.kycDocuments) {
+            try {
                 await unlink(document.filePath);
-            }catch(error:any){
-                if(error.code!=='ENOENT'){
+            } catch (error: any) {
+                if (error.code !== 'ENOENT') {
                     throw error;
                 }
             }
         }
 
-        return {message:'Application deleted successfully'};
+        return { message: 'Application deleted successfully' };
     }
 }

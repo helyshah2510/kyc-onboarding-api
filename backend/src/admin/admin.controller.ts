@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards,StreamableFile, UseInterceptors, UploadedFile, Delete} from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, UseGuards,StreamableFile, UseInterceptors, UploadedFile, Delete, Req} from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiProduces, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { AdminService } from './admin.service.js';
@@ -11,6 +11,7 @@ import { ListApplicationsQueryDto } from './dto/list-applications-query.dto.js';
 import { createReadStream } from 'node:fs';
 import { UpdateAddressDto } from './dto/update-address.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { AuthenticatedRequest } from '../auth/guard/jwt-auth.guard.js';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -42,24 +43,29 @@ export class AdminController {
     }
 
     @Patch(':id/approve')
-    approve(@Param('id', ParseIntPipe) id: number) {
-        return this.adminService.approve(id);
+    approve(
+        @Req() req:AuthenticatedRequest,
+        @Param('id', ParseIntPipe) id: number
+    ) {
+        return this.adminService.approve(id,req.user!.sub);
     }
 
     @Patch(':id/reject')
     reject(
+        @Req() req:AuthenticatedRequest,
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: RejectApplicationDto,
     ) {
-        return this.adminService.reject(id, dto.reason);
+        return this.adminService.reject(id, dto.reason, req.user!.sub);
     }
 
     @Patch(':id/address')
     updateAddress(
+        @Req() req:AuthenticatedRequest,
         @Param('id',ParseIntPipe)id:number,
         @Body()dto:UpdateAddressDto,
     ){
-        return this.adminService.updateAddress(id,dto.address);
+        return this.adminService.updateAddress(id,dto.address, req.user!.sub);
     }
 
     @Patch(':id/documents')
@@ -74,14 +80,18 @@ export class AdminController {
     })
     @UseInterceptors(FileInterceptor('file'))
     replaceDocument(
+        @Req() req:AuthenticatedRequest,
         @Param('id',ParseIntPipe) id:number,
         @UploadedFile()file:Express.Multer.File,
     ){
-        return this.adminService.replaceDocuments(id,file);
+        return this.adminService.replaceDocuments(id,file, req.user!.sub);
     }
 
     @Delete(':id/delete')
-    delete(@Param('id',ParseIntPipe)id:number){
-        return this.adminService.deleteApplication(id);
+    delete(
+        @Req() req:AuthenticatedRequest,
+        @Param('id',ParseIntPipe)id:number
+    ){
+        return this.adminService.deleteApplication(id, req.user!.sub);
     }
 }
