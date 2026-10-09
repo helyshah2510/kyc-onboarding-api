@@ -87,4 +87,12 @@ export class AdminService {
             data: { status: 'REJECTED', rejectionReason: reason },
         });
     }
+
+    async updateAddress(id:number,address:string){
+        await this.getReviewableApplication(id);
+        return this.prisma.kycApplication.update({
+            where:{id},
+            data:{address},
+        });
+    }
 }

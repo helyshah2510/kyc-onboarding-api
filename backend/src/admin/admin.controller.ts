@@ -9,6 +9,7 @@ import { Roles } from '../auth/decorator/roles.decorator.js';
 import { Query } from '@nestjs/common';
 import { ListApplicationsQueryDto } from './dto/list-applications-query.dto.js';
 import { createReadStream } from 'node:fs';
+import { UpdateAddressDto } from './dto/update-address.dto.js';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -50,5 +51,13 @@ export class AdminController {
         @Body() dto: RejectApplicationDto,
     ) {
         return this.adminService.reject(id, dto.reason);
+    }
+
+    @Patch(':id/address')
+    updateAddress(
+        @Param('id',ParseIntPipe)id:number,
+        @Body()dto:UpdateAddressDto,
+    ){
+        return this.adminService.updateAddress(id,dto.address);
     }
 }
