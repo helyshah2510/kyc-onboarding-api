@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/src/lib/api';
@@ -35,6 +35,14 @@ const badgeColor: Record<Status, string> = {
 };
 
 export default function AdminApplicationPage() {
+  return (
+    <Suspense fallback={<main className="p-8 text-gray-600">Loading application...</main>}>
+      <AdminApplicationView />
+    </Suspense>
+  );
+}
+
+function AdminApplicationView() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
