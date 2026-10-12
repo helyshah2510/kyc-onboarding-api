@@ -184,12 +184,8 @@ export class AuthService {
         }
 
         const isCorrect = await bcrypt.compare(dto.otp, record.otpHash);
-        const updated = await this.prisma.loginOtp.update({
-            where: { id: record.id },
-            data: { attempts: { increment: 1 } },
-        });
         if (!isCorrect) {
-            await this.prisma.loginOtp.update({
+            const updated = await this.prisma.loginOtp.update({
                 where: { id: record.id },
                 data: { attempts: { increment: 1 } },
             });
@@ -206,7 +202,6 @@ export class AuthService {
             throw new UnauthorizedException(
                 `Incorrect OTP. ${left} attempt${left === 1 ? '' : 's'} left`,
             );
-
         }
         //single use:delete it before handing out token
         await this.prisma.loginOtp.delete({ where: { id: record.id } });
