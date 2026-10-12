@@ -19,7 +19,6 @@ type PanDetails = {
 };
 
 type CreatedApplication = { id: number };
-type CreateFailure = { success: false; message: string };
 
 export default function NewKycPage() {
   const router = useRouter();
@@ -65,16 +64,10 @@ export default function NewKycPage() {
 
   function handleStart() {
     run(async () => {
-      const result = await api<CreatedApplication | CreateFailure>(
-        '/applications',
-        {
-          method: 'POST',
-          body: JSON.stringify({ pan, holderType }),
-        },
-      );
-      if (!('id' in result)) {
-        throw new Error(result.message ?? 'Could not start your application');
-      }
+      const result = await api<CreatedApplication>('/applications', {
+        method: 'POST',
+        body: JSON.stringify({ pan, holderType }),
+      });
       router.push(`/kyc/${result.id}`);
     });
   }

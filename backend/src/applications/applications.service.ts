@@ -20,6 +20,16 @@ export class ApplicationsService {
     private async getOwnedApplication(applicationId: number, userId: number) {
         const application = await this.prisma.kycApplication.findUnique({
             where: { id: applicationId },
+            include: {
+                kycDocuments: {
+                    select: {
+                        id: true,
+                        documentType: true,
+                        fileName: true,
+                        uploadedAt: true,
+                    },
+                },
+            },
         });
         if (!application || application.userId !== userId) {
             throw new NotFoundException('Application not found');
@@ -42,10 +52,9 @@ export class ApplicationsService {
         const panResult = await this.panService.validatePan(pan, holderType);
 
         if (!panResult.verified) {
-            return {
-                success: false,
-                message: panResult.reason,
-            };
+            throw new BadRequestException(
+                panResult.reason ?? 'PAN verification failed',
+            );
         }
 
         return this.prisma.kycApplication.create({
@@ -206,10 +215,9 @@ export class ApplicationsService {
         });
 
         if (!document) {
-            return {
-                success: false,
-                message: 'Aadhaar document is required before submitting KYC',
-            };
+            throw new BadRequestException(
+                'Aadhaar document is required before submitting KYC',
+            );
         }
 
         const wasRejected = application.status === 'REJECTED';

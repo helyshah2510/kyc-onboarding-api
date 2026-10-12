@@ -15,16 +15,8 @@ type Application = {
     holderType: string;
     status: 'DRAFT' | 'SUBMITTED' | 'VERIFIED' | 'APPROVED' | 'REJECTED';
     rejectionReason: string | null;
+    kycDocuments?: { id: number; fileName: string; uploadedAt: string }[];
 };
-
-type ActionResult = { success?: boolean; message?: string };
-
-// Some of your routes answer { success: false } with HTTP 200, so check it here
-function assertSuccess(result: ActionResult) {
-    if (result.success === false) {
-        throw new Error(result.message ?? 'Something went wrong');
-    }
-}
 
 export default function KycFormPage() {
     return (
@@ -64,6 +56,9 @@ function KycForm() {
             .then((app) => {
                 setApplication(app);
                 setAddress(app.address);
+                if (app.kycDocuments && app.kycDocuments.length > 0) {
+                    setUploadedName(app.kycDocuments[0].fileName);
+                }
             })
             .catch((err) =>
                 setLoadError(err instanceof Error ? err.message : 'Something went wrong'),
@@ -113,11 +108,10 @@ function KycForm() {
             const formData = new FormData();
             formData.append('file', file);
 
-            const result = await api<ActionResult>(`/applications/${id}/documents`, {
+            await api(`/applications/${id}/documents`, {
                 method: 'POST',
                 body: formData,
             });
-            assertSuccess(result);
 
             setUploadedName(file.name);
             setFile(null);
@@ -141,10 +135,9 @@ function KycForm() {
                 });
             }
 
-            const result = await api<ActionResult>(`/applications/${id}/submit`, {
+            await api(`/applications/${id}/submit`, {
                 method: 'POST',
             });
-            assertSuccess(result);
 
             router.push('/dashboard');
         });
