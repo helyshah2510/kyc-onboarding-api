@@ -397,3 +397,72 @@ The user prompt specifies making the frontend feel like a **real, polished, mode
 - **Why it matters:** Inconsistent alignment makes the application feel unpolished and broken on desktop screens.
 - **What changed:** Moved the closing `</div>` to wrap all dashboard components and cards inside the centered container.
 - **How to test:** Open `/dashboard` on desktop: all cards, status boxes, and headers stay neatly centered with consistent width.
+
+---
+
+### Batch 2: Backend Security & API Errors (COMPLETED)
+
+#### 1. [Fix C-06] Secure Application Phone OTP (randomInt, Bcrypt Hashing, Attempt Limits)
+- **Commit:** `68a0f84` (`fix(backend): secure application phone OTP with randomInt, bcrypt hashing, and attempt limit`)
+- **Files Changed:**
+  - [`backend/src/applications/applications.service.ts`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/applications/applications.service.ts)
+- **What was wrong:**
+  1. Phone OTP generation used `Math.random()`, which is a predictable pseudo-random generator unsuitable for authentication codes.
+  2. The generated OTP was stored in the database as plain text.
+  3. There was no attempt counter on phone OTP verification, making it vulnerable to brute force.
+- **Why it matters (Real-world analogy):** Storing plain OTPs in a database is like leaving the combination to a safe written in pencil on top of the safe. Anyone with temporary read access can bypass the verification.
+- **What changed:**
+  - Replaced `Math.random()` with cryptographically secure `crypto.randomInt(100000, 1000000)`.
+  - Hashed the OTP using `bcrypt.hash(otp, 10)` before storing it in `PhoneOtp.otp`.
+  - Preserved `console.log('OTP for ...')` so demo developers can read the code in the terminal without SMS gateway costs.
+  - Added an in-memory attempt limit (5 attempts max). After 5 wrong guesses, the OTP is invalidated.
+- **How to test:** Request a phone OTP on an application. Check PostgreSQL database `PhoneOtp` table: the `otp` column holds a bcrypt `$2b$10$...` hash instead of plain numbers. Terminal still logs the code for easy demo testing. Entering 5 wrong codes blocks further attempts.
+
+---
+
+#### 2. [Fix C-04] Real PNG File Signature Validation & 5MB Upload Size Limits
+- **Commit:** `333adc7` (`fix(security): enforce PNG magic bytes validation and 5MB upload size limit across backend and frontend`)
+- **Files Changed:**
+  - [`backend/src/documents/documents.service.ts`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/documents/documents.service.ts)
+  - [`backend/src/documents/documents.controller.ts`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/documents/documents.controller.ts)
+  - [`backend/src/admin/admin.controller.ts`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/admin/admin.controller.ts)
+  - [`kyc-frontend/src/app/kyc/[id]/page.tsx`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/kyc-frontend/src/app/kyc/[id]/page.tsx)
+  - [`kyc-frontend/src/app/admin/applications/[id]/page.tsx`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/kyc-frontend/src/app/admin/applications/[id]/page.tsx)
+- **What was wrong:**
+  1. The server only inspected the HTTP header `file.mimetype === 'image/png'`, which can easily be spoofed by attackers uploading shell scripts or malware.
+  2. There was no file size restriction on uploads, risking memory exhaustion or Denial of Service.
+- **Why it matters (Real-world analogy):** Relying solely on the MIME type is like a bouncer checking the label on a wrapped package without opening it. If a parcel says "Fresh Fruits", it gets waved in even if it contains fireworks. Real PNG files always begin with the 8-byte signature `89 50 4E 47 0D 0A 1A 0A`.
+- **What changed:**
+  - Added binary magic byte verification in `documents.service.ts` checking the first 8 bytes of `file.buffer`.
+  - Added 5MB upload limits via Multer on both user and admin document endpoints.
+  - Added client-side size validation (<5MB) on the file pickers in the frontend for immediate user feedback.
+- **How to test:** Rename a `.txt` file to `.png` and try to upload it: the server rejects it with `"Invalid file content. The uploaded file is not a valid PNG image"`. Upload a genuine PNG under 5MB: it succeeds immediately.
+
+---
+
+#### 3. [Fix C-03 & M-01] Document Inclusion on Application Fetch & Standard HTTP Exceptions
+- **Commit:** `ad86259` (`fix(api): include kycDocuments in application fetch and standardize HTTP exceptions with frontend cleanup`)
+- **Files Changed:**
+  - [`backend/src/applications/applications.service.ts`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/applications/applications.service.ts)
+  - [`kyc-frontend/src/app/kyc/[id]/page.tsx`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/kyc-frontend/src/app/kyc/[id]/page.tsx)
+  - [`kyc-frontend/src/app/kyc/new/page.tsx`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/kyc-frontend/src/app/kyc/new/page.tsx)
+- **What was wrong:**
+  1. `GET /applications/:id` did not include `kycDocuments`. When a user refreshed or returned to `/kyc/[id]`, the form had no record of previously uploaded Aadhaar files.
+  2. Several backend failure paths returned `{ success: false, message: ... }` with HTTP 200/201, forcing the frontend to invent ad-hoc `assertSuccess` and union check hacks.
+- **Why it matters (Real-world analogy):** Receiving an envelope stamped "APPROVED" on the outside (HTTP 200), only to find a letter inside saying "Rejected". Standard HTTP protocols expect 4xx status codes for client-correctable failures.
+- **What changed:**
+  - In `getOwnedApplication()`, added `include: { kycDocuments: { select: { id: true, documentType: true, fileName: true, uploadedAt: true } } }`.
+  - Replaced `{ success: false }` returns with `throw new BadRequestException(...)`.
+  - Cleaned up the frontend callers: removed `assertSuccess()` and `CreateFailure` types, and automatically populated `uploadedName` from `application.kycDocuments`.
+- **How to test:** Upload an Aadhaar on `/kyc/[id]`, refresh the browser: the existing document is displayed immediately. Submit without an Aadhaar: backend returns HTTP 400 with a clean error message.
+
+---
+
+#### 4. [Fix C-01] Next.js 16 Suspense Boundary for Prerendering
+- **Commit:** `8e4e999` (`fix(frontend): wrap admin application details in Suspense for Next.js 16 prerendering`)
+- **Files Changed:**
+  - [`kyc-frontend/src/app/admin/applications/[id]/page.tsx`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/kyc-frontend/src/app/admin/applications/[id]/page.tsx)
+- **What was wrong:** Client component invoked `useParams()` outside `<Suspense>`, which caused Next.js 16 build to crash during static page generation.
+- **Why it matters (Real-world analogy):** A factory assembly line halting because a customizable label wasn't put in an "Assemble Later" box.
+- **What changed:** Wrapped `AdminApplicationView` in `<Suspense fallback={<LoadingSkeleton />}>`.
+- **How to test:** Run `npm run build` in `kyc-frontend`: all 11 routes now build and prerender with 0 errors.
