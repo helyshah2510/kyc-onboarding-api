@@ -78,7 +78,11 @@ export class AdminController {
             },
         },
     })
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(
+        FileInterceptor('file', {
+            limits: { fileSize: 5 * 1024 * 1024 },
+        }),
+    )
     replaceDocument(
         @Req() req:AuthenticatedRequest,
         @Param('id',ParseIntPipe) id:number,
