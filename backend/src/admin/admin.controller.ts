@@ -87,7 +87,7 @@ export class AdminController {
         return this.adminService.replaceDocuments(id,file, req.user!.sub);
     }
 
-    @Delete(':id/delete')
+    @Delete([':id', ':id/delete'])
     delete(
         @Req() req:AuthenticatedRequest,
         @Param('id',ParseIntPipe)id:number
