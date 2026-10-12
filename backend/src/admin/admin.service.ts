@@ -111,7 +111,7 @@ export class AdminService {
 
         this.notificationsService.send(
             application.user,
-            'your Kyc application has been rejected reason ${reason}',
+            `Your KYC application has been rejected. Reason: ${reason}`,
         );
         return updated;
     }
@@ -121,7 +121,7 @@ export class AdminService {
         const newAddress = address.trim();
         const updated = await this.prisma.kycApplication.update({
             where: { id },
-            data: { address },
+            data: { address: newAddress },
         });
         await this.auditService.record(adminId, 'ADDRESS_UPDATED', id,{
             oldAddress: application.address,

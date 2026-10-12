@@ -42,8 +42,26 @@ export class DocumentsService {
             throw new BadRequestException('File is required');
         }
 
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+        if (file.size > MAX_FILE_SIZE) {
+            throw new BadRequestException('File size must not exceed 5 MB');
+        }
+
         if (file.mimetype !== 'image/png') {
             throw new BadRequestException('Only PNG files are allowed');
+        }
+
+        // Validate PNG magic bytes signature: 89 50 4E 47 0D 0A 1A 0A
+        const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+        const isRealPng =
+            file.buffer &&
+            file.buffer.length >= 8 &&
+            pngSignature.every((byte, index) => file.buffer[index] === byte);
+
+        if (!isRealPng) {
+            throw new BadRequestException(
+                'Invalid file content. The uploaded file is not a valid PNG image',
+            );
         }
 
         const existingDocument = await this.prisma.kycDocument.findFirst({

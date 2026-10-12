@@ -3,6 +3,11 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { PanService } from '../pan/pan.service.js';
 import type { HolderType } from '../pan/pan.constants.js';
 import { UpdatePersonalDetailsDto } from './dto/update-personal-details.dto.js';
+import { randomInt } from 'node:crypto';
+import bcrypt from 'bcrypt';
+
+const MAX_PHONE_OTP_ATTEMPTS = 5;
+const phoneOtpAttempts = new Map<number, number>();
 
 @Injectable()
 export class ApplicationsService {
@@ -15,6 +20,16 @@ export class ApplicationsService {
     private async getOwnedApplication(applicationId: number, userId: number) {
         const application = await this.prisma.kycApplication.findUnique({
             where: { id: applicationId },
+            include: {
+                kycDocuments: {
+                    select: {
+                        id: true,
+                        documentType: true,
+                        fileName: true,
+                        uploadedAt: true,
+                    },
+                },
+            },
         });
         if (!application || application.userId !== userId) {
             throw new NotFoundException('Application not found');
@@ -37,10 +52,9 @@ export class ApplicationsService {
         const panResult = await this.panService.validatePan(pan, holderType);
 
         if (!panResult.verified) {
-            return {
-                success: false,
-                message: panResult.reason,
-            };
+            throw new BadRequestException(
+                panResult.reason ?? 'PAN verification failed',
+            );
         }
 
         return this.prisma.kycApplication.create({
@@ -84,20 +98,20 @@ export class ApplicationsService {
         const application = await this.getEditableApplication(applicationId, userId);
 
         if (application.phone === phone) {
-            return {
-                success: false,
-                message: 'This phone number is already associated with the application',
-            };
+            throw new BadRequestException(
+                'This phone number is already associated with the application',
+            );
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = randomInt(100000, 1000000).toString();
+        const otpHash = await bcrypt.hash(otp, 10);
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
         await this.prisma.phoneOtp.create({
             data: {
                 applicationId,
                 phone,
-                otp,
+                otp: otpHash,
                 expiresAt,
             },
         });
@@ -116,7 +130,6 @@ export class ApplicationsService {
         const otpRecord = await this.prisma.phoneOtp.findFirst({
             where: {
                 applicationId,
-                otp,
                 verified: false,
             },
             orderBy: {
@@ -125,18 +138,37 @@ export class ApplicationsService {
         });
 
         if (!otpRecord) {
-            return {
-                success: false,
-                message: 'Invalid OTP',
-            };
+            throw new BadRequestException('No pending OTP found. Please request a new one');
         }
 
         if (otpRecord.expiresAt < new Date()) {
-            return {
-                success: false,
-                message: 'OTP has expired',
-            };
+            phoneOtpAttempts.delete(otpRecord.id);
+            throw new BadRequestException('OTP has expired');
         }
+
+        const currentAttempts = phoneOtpAttempts.get(otpRecord.id) ?? 0;
+        if (currentAttempts >= MAX_PHONE_OTP_ATTEMPTS) {
+            throw new BadRequestException(
+                'Too many wrong attempts. Please request a new OTP',
+            );
+        }
+
+        const isCorrect = await bcrypt.compare(otp, otpRecord.otp);
+        if (!isCorrect) {
+            const nextAttempts = currentAttempts + 1;
+            phoneOtpAttempts.set(otpRecord.id, nextAttempts);
+            if (nextAttempts >= MAX_PHONE_OTP_ATTEMPTS) {
+                throw new BadRequestException(
+                    'Too many wrong attempts. Please request a new OTP',
+                );
+            }
+            const left = MAX_PHONE_OTP_ATTEMPTS - nextAttempts;
+            throw new BadRequestException(
+                `Invalid OTP. ${left} attempt${left === 1 ? '' : 's'} left`,
+            );
+        }
+
+        phoneOtpAttempts.delete(otpRecord.id);
 
         await this.prisma.$transaction([
             this.prisma.kycApplication.update({
@@ -183,10 +215,9 @@ export class ApplicationsService {
         });
 
         if (!document) {
-            return {
-                success: false,
-                message: 'Aadhaar document is required before submitting KYC',
-            };
+            throw new BadRequestException(
+                'Aadhaar document is required before submitting KYC',
+            );
         }
 
         const wasRejected = application.status === 'REJECTED';

@@ -21,7 +21,11 @@ export class DocumentsController {
             },
         },
     })
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(
+        FileInterceptor('file', {
+            limits: { fileSize: 5 * 1024 * 1024 },
+        }),
+    )
     uploadDocument(
         @Req() req:AuthenticatedRequest,
         @Param('id', ParseIntPipe) applicationId: number,

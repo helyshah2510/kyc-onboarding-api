@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/src/lib/api';
@@ -35,6 +35,14 @@ const badgeColor: Record<Status, string> = {
 };
 
 export default function AdminApplicationPage() {
+  return (
+    <Suspense fallback={<main className="p-8 text-gray-600">Loading application...</main>}>
+      <AdminApplicationView />
+    </Suspense>
+  );
+}
+
+function AdminApplicationView() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
@@ -189,8 +197,18 @@ export default function AdminApplicationPage() {
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const chosen = e.target.files?.[0] ?? null;
-    if (chosen && chosen.type !== 'image/png') {
+    if (!chosen) {
+      setFile(null);
+      return;
+    }
+    if (chosen.type !== 'image/png') {
       setError('Only PNG files are allowed');
+      setFile(null);
+      setFileInputKey((k) => k + 1);
+      return;
+    }
+    if (chosen.size > 5 * 1024 * 1024) {
+      setError('File size must not exceed 5 MB');
       setFile(null);
       setFileInputKey((k) => k + 1);
       return;
