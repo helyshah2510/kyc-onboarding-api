@@ -314,8 +314,86 @@ The user prompt specifies making the frontend feel like a **real, polished, mode
 7. **Component Modularization:**
    - Split monolithic page files (e.g., `admin/applications/[id]/page.tsx` of 437 lines) into smaller, reusable components: `ApplicationDetailsCard`, `DocumentViewer`, `ActionModals`, `StatusTimeline`.
 
+## Phase 2 Implementation Progress
+
+### Batch 1: Small Bugs (COMPLETED)
+
+#### 1. [Fix S-03 & S-04] Admin Rejection String Interpolation & Untrimmed Address
+- **Commit:** `da2261f` (`fix(backend): fix admin rejection notification string template and untrimmed address`)
+- **Files Changed:**
+  - [`backend/src/admin/admin.service.ts:114, 124`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/admin/admin.service.ts)
+  - [`backend/src/admin/notifications/notifications.service.ts:12`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/admin/notifications/notifications.service.ts)
+- **What was wrong:**
+  1. The rejection notification string was wrapped in single quotes (`'...'`) instead of template literal backticks (`` `...` ``), causing the user notification to print literal `${reason}` instead of the rejection reason.
+  2. The notification logger in `notifications.service.ts` printed `[to.name]` literally instead of `${to.name}`.
+  3. `admin.service.ts` created a sanitized `newAddress = address.trim()` variable but saved the raw `address` to the database.
+- **Why it matters (Real-world analogy):** Writing `${reason}` inside single quotes is like printing a form letter where the mail merge tag `{{first_name}}` wasn't replaced, sending a letter that literally greets you as "Dear {{first_name}}".
+- **What changed:** Replaced single quotes with backticks in rejection message and notification logger, and updated database write to use `data: { address: newAddress }`.
+- **How to test:** Reject an application from admin with a reason like "Photo blurry". Check terminal logs: verify that the user notification contains the exact reason string and the user's name rather than placeholders.
+
 ---
 
-## Phase 1 Conclusion & Ready for Review
+#### 2. [Fix C-02] Admin Delete Application Route Mismatch
+- **Commit:** `f729dae` (`fix(backend): support standard REST delete route on admin applications controller`)
+- **Files Changed:**
+  - [`backend/src/admin/admin.controller.ts:90`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/admin/admin.controller.ts#L90)
+- **Quoted Lines:**
+  - Frontend [`kyc-frontend/src/app/admin/page.tsx:88`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/kyc-frontend/src/app/admin/page.tsx#L88): `await api('/admin/applications/' + app.id, { method: 'DELETE' });`
+  - Backend [`backend/src/admin/admin.controller.ts:90`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/admin/admin.controller.ts#L90): `@Delete(':id/delete')`
+- **What was wrong:** The backend only listened for `DELETE /admin/applications/:id/delete`, while standard REST and the frontend called `DELETE /admin/applications/:id`, returning HTTP 404.
+- **Why it matters (Real-world analogy):** Mailing a letter to "House 10" when the mail slot is labeled "House 10-Basement". The post office marks it "Return to Sender: Address not found".
+- **What changed:** Updated the `@Delete` decorator to accept both routes: `@Delete([':id', ':id/delete'])`.
+- **How to test:** Delete an application from the admin table; it successfully deletes via `DELETE /admin/applications/:id` with HTTP 200 instead of 404.
 
-All code remains intact and unmodified on branch `review-and-ui`. Awaiting your review and approval before proceeding with Phase 2 fixes and UI implementation.
+---
+
+#### 3. [Fix M-02] Login OTP Attempts Double-Increment
+- **Commit:** `e6a87b7` (`fix(backend): fix login OTP attempts double-increment bug`)
+- **Files Changed:**
+  - [`backend/src/auth/auth.service.ts:186-210`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/backend/src/auth/auth.service.ts#L186-L210)
+- **Quoted Lines:**
+  ```ts
+  const isCorrect = await bcrypt.compare(dto.otp, record.otpHash);
+  const updated = await this.prisma.loginOtp.update({
+      where: { id: record.id },
+      data: { attempts: { increment: 1 } },
+  });
+  if (!isCorrect) {
+      await this.prisma.loginOtp.update({
+          where: { id: record.id },
+          data: { attempts: { increment: 1 } },
+      });
+  ```
+- **What was wrong:** `attempts` was incremented once on line 189, and then inside `if (!isCorrect)`, it was incremented a SECOND time on line 192. One wrong OTP entered counted as 2 wrong attempts.
+- **Why it matters (Real-world analogy):** Like an ATM that charges you two strikes for a single mistyped PIN, locking your card after two typos instead of five.
+- **What changed:** Removed the unconditional increment before the check. `attempts` is only incremented once inside the `if (!isCorrect)` branch. On correct OTP, the record is simply deleted upon login.
+- **How to test:** Request a login OTP and enter 1 incorrect code. Check the database `LoginOtp` table: `attempts` is 1 (not 2).
+
+---
+
+#### 4. [Fix S-01 & S-02] Login OTP Type & Registration OTP Regex Sanitizer
+- **Commit:** `f4364db` (`fix(frontend): fix login OTP request type and registration OTP regex replace`)
+- **Files Changed:**
+  - [`kyc-frontend/src/app/login/page.tsx:67`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/kyc-frontend/src/app/login/page.tsx#L67)
+  - [`kyc-frontend/src/app/register/page.tsx:145`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/kyc-frontend/src/app/register/page.tsx#L145)
+- **What was wrong:**
+  1. `login/page.tsx:67` called `api<{ accessToken: string }>('/auth/login/otp/request')`, but that endpoint only sends an OTP and returns `{ message: string }`.
+  2. `register/page.tsx:145` used `replace(/\D/, '')` (missing `/g` flag) when cleaning OTP inputs, only stripping the first non-digit character.
+- **Why it matters (Real-world analogy):**
+  1. Claiming an envelope contains a car key (`accessToken`) when it only contains a note saying "We mailed the key" (`message`).
+  2. A typo filter that only cleans the first mistake and lets all other punctuation through.
+- **What changed:** Changed type parameter to `<{ message: string }>` in `login/page.tsx` and added the global regex flag `replace(/\D/g, '')` in `register/page.tsx`.
+- **How to test:** Paste `12-34-56` into the registration OTP field: all hyphens are cleanly removed to `123456`.
+
+---
+
+#### 5. [Fix M-08] Dashboard Container Wrapper
+- **Commit:** `dd38f81` (`fix(frontend): wrap dashboard cards and status within max-width container`)
+- **Files Changed:**
+  - [`kyc-frontend/src/app/dashboard/page.tsx:94-144`](file:///c:/Users/helys/VS_code_codes/kyc-onboarding-api/kyc-frontend/src/app/dashboard/page.tsx#L94-L144)
+- **Quoted Lines:**
+  - Lines 95-102 closed `<div className="mx-auto max-w-xl space-y-6">` right after the header, leaving lines 103-143 uncontained.
+- **What was wrong:** All cards, empty states, and loading/error indicators were rendered outside the centered container, causing them to stretch across the full width of widescreen monitors.
+- **Why it matters:** Inconsistent alignment makes the application feel unpolished and broken on desktop screens.
+- **What changed:** Moved the closing `</div>` to wrap all dashboard components and cards inside the centered container.
+- **How to test:** Open `/dashboard` on desktop: all cards, status boxes, and headers stay neatly centered with consistent width.
