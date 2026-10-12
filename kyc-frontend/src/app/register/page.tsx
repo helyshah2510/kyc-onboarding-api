@@ -142,7 +142,7 @@ export default function RegisterPage() {
                             maxLength={6}
                             placeholder="6 digit otp"
                             value={otp}
-                            onChange={(e) => setOtp(e.target.value.replace(/\D/, ''))}
+                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                             required
                             className={inputClass}
                         />

@@ -64,7 +64,7 @@ export default function LoginPage() {
   async function HandleRequestOtp(e: React.FormEvent) {
     e.preventDefault();
     run(async () => {
-      await api<{ accessToken: string }>('/auth/login/otp/request', {
+      await api<{ message: string }>('/auth/login/otp/request', {
         method: 'POST',
         body: JSON.stringify({ phone }),
       });
