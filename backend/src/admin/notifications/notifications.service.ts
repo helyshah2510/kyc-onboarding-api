@@ -9,6 +9,6 @@ export class NotificationsService{
     //placeholder later we can change it 
 
     send(to:Recipient,message:string){
-        this.logger.log(`[Notify] to [to.name] (${to.email}, ${to.phone}: ${message})`);
+        this.logger.log(`[Notify] to ${to.name} (${to.email}, ${to.phone}): ${message}`);
     }
 }
