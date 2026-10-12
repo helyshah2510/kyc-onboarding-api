@@ -15,6 +15,13 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 
   const data = await res.json().catch(() => null);
 
+  // Expired or invalid token on a protected route: back to login
+  if (res.status === 401 && token && !path.startsWith('/auth/')) {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+    throw new Error('Session expired. Please log in again.');
+  }
+
   if (!res.ok) {
     const message = Array.isArray(data?.message)
       ? data.message.join(', ')
