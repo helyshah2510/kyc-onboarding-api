@@ -104,7 +104,7 @@ export default function DashboardPage() {
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 {!loading && !error && !application && (
                     <div className="inline-flex items-center justify-center rounded-xl bg-teal-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">
-                        <h2 className="text-lg font-semibold text-gray-900">
+                        <h2 className="text-lg font-semibold text-slate-900">
                             You have not started your KYC yet
                         </h2>
                         <p className="text-gray-600">
@@ -112,7 +112,7 @@ export default function DashboardPage() {
                         </p>
                         <Link
                             href="/kyc/new"
-                            className="inline-block rounded-lg bg-blue-600 px-5 py-2 font-medium text-white hover:bg-blue-700"
+                            className="inline-block rounded-lg bg-teal-800 px-5 py-2 font-medium text-white hover:bg-blue-700"
                         >
                             Start KYC
                         </Link>
@@ -121,7 +121,7 @@ export default function DashboardPage() {
                 {application && info && (
                     <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-900">
+                            <h2 className="text-lg font-semibold text-slate-900">
                                 {info.title}
                             </h2>
                             <span

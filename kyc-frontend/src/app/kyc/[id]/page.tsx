@@ -190,7 +190,7 @@ function KycForm() {
                             {application.status}
                         </span>
                     </p>
-                    <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
+                    <Link href="/dashboard" className="text-sm text-teal-800 hover:underline">
                         Back to dashboard
                     </Link>
                 </div>

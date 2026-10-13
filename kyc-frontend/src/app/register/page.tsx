@@ -185,7 +185,7 @@ export default function RegisterPage() {
                         </p>
                         <Link
                             href="/login"
-                            className="block w-full rounded-lg bg-blue-600 py-2 font-medium text-white hover:bg-blue-700"
+                            className="block w-full rounded-lg bg-teal-50 py-2 font-medium text-white hover:bg-blue-700"
                         >
                             Go to login
                         </Link>
@@ -194,7 +194,7 @@ export default function RegisterPage() {
                 {step < 4 && (
                     <p className="text-center text-sm text-gray-600">
                         Already registered?{' '}
-                        <Link href="/login" className="text-blue-600 hover:underline">
+                        <Link href="/login" className="text-teal-800 hover:underline">
                             Login
                         </Link>
                     </p>

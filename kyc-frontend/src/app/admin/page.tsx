@@ -20,13 +20,15 @@ type AdminApplication = {
 const FILTERS = ['ALL', 'DRAFT', 'VERIFIED', 'SUBMITTED', 'APPROVED', 'REJECTED'] as const;
 type Filter = (typeof FILTERS)[number];
 
+
 const badgeColor: Record<Status, string> = {
-  DRAFT: 'bg-yellow-100 text-yellow-800',
-  VERIFIED: 'bg-blue-100 text-blue-800',
-  SUBMITTED: 'bg-blue-100 text-blue-800',
-  APPROVED: 'bg-green-100 text-green-800',
-  REJECTED: 'bg-red-100 text-red-800',
+  DRAFT: 'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200',
+  VERIFIED: 'bg-blue-50 text-blue-800 ring-1 ring-inset ring-blue-200',
+  SUBMITTED: 'bg-blue-50 text-blue-800 ring-1 ring-inset ring-blue-200',
+  APPROVED: 'bg-teal-50 text-teal-800 ring-1 ring-inset ring-teal-200',
+  REJECTED: 'bg-red-50 text-red-800 ring-1 ring-inset ring-red-200',
 };
+
 
 export default function AdminPage() {
   const router = useRouter();
@@ -77,8 +79,8 @@ export default function AdminPage() {
   async function handleDelete(app: AdminApplication) {
     const sure = window.confirm(
       `Delete application #${app.id} (${app.name}, ${app.pan})?\n\n` +
-        'This also deletes the Aadhaar image. It cannot be undone. ' +
-        'The user account stays.',
+      'This also deletes the Aadhaar image. It cannot be undone. ' +
+      'The user account stays.',
     );
     if (!sure) return;
 
@@ -109,13 +111,24 @@ export default function AdminPage() {
   );
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+
+    <main className="flex flex-1 justify-center px-4 py-10 sm:px-6">
+      <div className="w-full max-w-6xl space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">KYC applications</h1>
+          <div>
+            <p className="text-sm font-semibold text-teal-800">
+              ADMINISTRATION
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+              KYC applications
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Review applications, track verification status, and manage applicant records.
+            </p>
+          </div>
           <button
             onClick={handleLogout}
-            className="text-sm text-blue-600 hover:underline"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800"
           >
             Logout
           </button>
@@ -125,7 +138,7 @@ export default function AdminPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as Filter)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900"
+            className="w-full rounded-xl border border-slate-300 bg-white whitespace-nowrap px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/10 sm:w-auto"
           >
             {FILTERS.map((f) => (
               <option key={f} value={f}>
@@ -139,64 +152,74 @@ export default function AdminPage() {
             placeholder="Search by name, PAN or email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 sm:max-w-sm"
+            className="w-full rounded-xl border border-slate-300 bg-white whitespace-nowrap px-4 py-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/10 sm:max-w-sm"
           />
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
 
         {loading ? (
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-sm text-slate-500">Loading applications...</p>
         ) : visible.length === 0 ? (
-          <p className="rounded-xl bg-white p-6 text-gray-600 shadow">
-            No applications found.
-          </p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <h2 className="font-semibold text-slate-900">No applications found</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Try a different status filter or search term.
+            </p>
+          </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl bg-white shadow">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
             <table className="w-full text-left text-sm">
-              <thead className="border-b bg-gray-50 text-gray-500">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">ID</th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">PAN</th>
-                  <th className="px-4 py-3">Owner</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Created</th>
-                  <th className="px-4 py-3">Actions</th>
+                  <th className="whitespace-nowrap px-4 py-4">ID</th>
+                  <th className="whitespace-nowrap px-4 py-4">Name</th>
+                  <th className="whitespace-nowrap px-4 py-4">PAN</th>
+                  <th className="whitespace-nowrap px-4 py-4">Owner</th>
+                  <th className="whitespace-nowrap px-4 py-4">Status</th>
+                  <th className="whitespace-nowrap px-4 py-4">Created</th>
+                  <th className="whitespace-nowrap px-4 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {visible.map((app) => (
-                  <tr key={app.id} className="border-b last:border-0 text-gray-900">
-                    <td className="px-4 py-3">{app.id}</td>
-                    <td className="px-4 py-3">{app.name}</td>
-                    <td className="px-4 py-3">{app.pan}</td>
-                    <td className="px-4 py-3">
+                  <tr
+                    key={app.id}
+                    className="border-b border-slate-100 text-slate-900 transition hover:bg-slate-50 last:border-0"
+                  >
+                    <td className="whitespace-nowrap px-4 py-4">{app.id}</td>
+                    <td className="whitespace-nowrap px-4 py-4">{app.name}</td>
+                    <td className="whitespace-nowrap px-4 py-4">{app.pan}</td>
+                    <td className="whitespace-nowrap px-4 py-4">
                       <div>{app.user.name}</div>
                       <div className="text-xs text-gray-500">{app.user.email}</div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-4">
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-medium ${badgeColor[app.status]}`}
                       >
                         {app.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-4">
                       {new Date(app.createdAt).toLocaleDateString('en-IN')}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-4">
                       <div className="flex gap-3">
                         <Link
                           href={`/admin/applications/${app.id}`}
-                          className="text-blue-600 hover:underline"
+                          className="font-medium text-teal-800 transition hover:text-teal-700 hover:underline"
                         >
                           View
                         </Link>
                         <button
                           onClick={() => handleDelete(app)}
                           disabled={deletingId === app.id}
-                          className="text-red-600 hover:underline disabled:opacity-50"
+                          className="font-medium text-red-700 transition hover:text-red-800 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {deletingId === app.id ? 'Deleting...' : 'Delete'}
                         </button>

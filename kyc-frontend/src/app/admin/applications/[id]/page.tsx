@@ -27,16 +27,23 @@ type Application = {
 type ImageState = 'loading' | 'ready' | 'missing' | 'error';
 
 const badgeColor: Record<Status, string> = {
-  DRAFT: 'bg-yellow-100 text-yellow-800',
-  VERIFIED: 'bg-blue-100 text-blue-800',
-  SUBMITTED: 'bg-blue-100 text-blue-800',
-  APPROVED: 'bg-green-100 text-green-800',
-  REJECTED: 'bg-red-100 text-red-800',
+  DRAFT: 'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200',
+  VERIFIED: 'bg-blue-50 text-blue-800 ring-1 ring-inset ring-blue-200',
+  SUBMITTED: 'bg-blue-50 text-blue-800 ring-1 ring-inset ring-blue-200',
+  APPROVED: 'bg-teal-50 text-teal-800 ring-1 ring-inset ring-teal-200',
+  REJECTED: 'bg-red-50 text-red-800 ring-1 ring-inset ring-red-200',
 };
+
 
 export default function AdminApplicationPage() {
   return (
-    <Suspense fallback={<main className="p-8 text-gray-600">Loading application...</main>}>
+    <Suspense
+      fallback={
+        <main className="flex flex-1 items-center justify-center px-4 py-12">
+          <p className="text-sm text-slate-500">Loading application...</p>
+        </main>
+      }
+    >
       <AdminApplicationView />
     </Suspense>
   );
@@ -237,18 +244,25 @@ function AdminApplicationView() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900';
+    'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/10';
 
   if (pageLoading) {
-    return <main className="p-8 text-gray-600">Loading...</main>;
+    return (
+      <main className="flex flex-1 items-center justify-center px-4 py-12">
+        <p className="text-sm text-slate-500">Loading application details...</p>
+      </main>
+    );
   }
 
   if (loadError || !application) {
     return (
-      <main className="min-h-screen bg-gray-50 px-4 py-8">
-        <div className="mx-auto max-w-2xl space-y-3 rounded-xl bg-white p-6 shadow">
-          <p className="text-red-600">{loadError || 'Application not found'}</p>
-          <Link href="/admin" className="text-sm text-blue-600 hover:underline">
+      <main className="flex flex-1 justify-center px-4 py-10 sm:px-6">
+        <div className="w-full max-w-2xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <p className="text-sm text-red-700"> {loadError || 'Application not found'} </p>
+          <Link
+            href="/admin"
+            className="text-sm font-medium text-teal-800 hover:underline"
+          >
             Back to list
           </Link>
         </div>
@@ -262,12 +276,15 @@ function AdminApplicationView() {
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="mx-auto max-w-2xl space-y-6">
-        <Link href="/admin" className="text-sm text-blue-600 hover:underline">
+        <Link
+          href="/admin"
+          className="inline-flex text-sm font-medium text-teal-800 transition hover:text-teal-700 hover:underline"
+        >
           &larr; Back to list
         </Link>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-slate-900">
             Application #{application.id}
           </h1>
           <span
@@ -278,42 +295,42 @@ function AdminApplicationView() {
         </div>
 
         {/* Details */}
-        <div className="space-y-4 rounded-xl bg-white p-6 shadow">
+        <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-gray-500">Name</dt>
-              <dd className="font-medium text-gray-900">{application.name}</dd>
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Name</dt>
+              <dd className="mt-1 font-medium text-slate-900">{application.name}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">PAN</dt>
-              <dd className="font-medium text-gray-900">{application.pan}</dd>
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">PAN</dt>
+              <dd className="mt-1 font-medium text-slate-900">{application.pan}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Phone</dt>
-              <dd className="font-medium text-gray-900">{application.phone}</dd>
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Phone</dt>
+              <dd className="mt-1 font-medium text-slate-900">{application.phone}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Holder type</dt>
-              <dd className="font-medium capitalize text-gray-900">
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Holder type</dt>
+              <dd className="mt-1 font-medium capitalize text-slate-900">
                 {application.holderType}
               </dd>
             </div>
             <div className="sm:col-span-2">
-              <dt className="text-gray-500">Address</dt>
-              <dd className="font-medium text-gray-900">{application.address}</dd>
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Address</dt>
+              <dd className="mt-1 font-medium text-slate-900">{application.address}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Owner</dt>
-              <dd className="font-medium text-gray-900">
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Owner</dt>
+              <dd className="mt-1 font-medium text-slate-900">
                 {application.user.name}
-                <span className="block text-xs font-normal text-gray-500">
+                <span className="mt-1 block text-xs font-normal text-slate-500">
                   {application.user.email} &middot; {application.user.phone}
                 </span>
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">Created</dt>
-              <dd className="font-medium text-gray-900">
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Created</dt>
+              <dd className="mt-1 font-medium text-slate-900">
                 {new Date(application.createdAt).toLocaleString('en-IN')}
               </dd>
             </div>
@@ -327,40 +344,61 @@ function AdminApplicationView() {
         </div>
 
         {/* Aadhaar image */}
-        <div className="space-y-3 rounded-xl bg-white p-6 shadow">
-          <h2 className="text-lg font-semibold text-gray-900">Aadhaar image</h2>
+        <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Aadhaar image
+          </h2>
+          <p className="text-sm leading-6 text-slate-500">
+            Review the uploaded document below.
+          </p>
 
           {imageState === 'loading' && (
-            <p className="text-sm text-gray-600">Loading image...</p>
+            <p className="text-sm text-slate-500">Loading Aadhaar image...</p>
           )}
           {imageState === 'missing' && (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm leading-6 text-slate-500">
               No Aadhaar image has been uploaded for this application.
             </p>
           )}
           {imageState === 'error' && (
-            <p className="text-sm text-red-600">Could not load the image.</p>
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              Could not load the image.
+            </p>
           )}
           {imageState === 'ready' && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={imageUrl}
               alt="Aadhaar"
-              className="max-h-96 rounded-lg border border-gray-200"
+              className="max-h-[32rem] max-w-full rounded-xl border border-slate-200 object-contain"
             />
           )}
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {notice && <p className="text-sm text-green-700">{notice}</p>}
+
+        {error && (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
+
+        {notice && (
+          <p className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+            {notice}
+          </p>
+        )}
+
 
         {/* Actions */}
         {reviewable ? (
-          <div className="space-y-6 rounded-xl bg-white p-6 shadow">
-            <h2 className="text-lg font-semibold text-gray-900">Actions</h2>
+          <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <h2 className="text-lg font-semibold text-slate-900">Review actions</h2>
+            <p className="text-sm leading-6 text-slate-500">
+              Update applicant details or make a verification decision.
+            </p>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-semibold text-slate-700">
                 Edit address
               </label>
               <textarea
@@ -373,14 +411,14 @@ function AdminApplicationView() {
                 type="button"
                 onClick={handleSaveAddress}
                 disabled={busy}
-                className="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                className="rounded-xl border border-teal-800 px-4 py-2 text-sm font-semibold text-teal-800 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Save address
               </button>
             </div>
 
             <form onSubmit={handleReplaceImage} className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-semibold text-slate-700">
                 Replace Aadhaar image (PNG)
               </label>
               <input
@@ -393,7 +431,7 @@ function AdminApplicationView() {
               <button
                 type="submit"
                 disabled={busy || !file}
-                className="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                className="rounded-xl border border-teal-800 px-4 py-2 text-sm font-semibold text-teal-800 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Replace image
               </button>
@@ -405,7 +443,7 @@ function AdminApplicationView() {
                   type="button"
                   onClick={handleApprove}
                   disabled={busy}
-                  className="rounded-lg bg-green-600 px-5 py-2 font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                  className="rounded-xl bg-teal-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Approve
                 </button>
@@ -416,7 +454,7 @@ function AdminApplicationView() {
                     setError('');
                   }}
                   disabled={busy}
-                  className="rounded-lg bg-red-600 px-5 py-2 font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  className="rounded-xl bg-red-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Reject
                 </button>
@@ -435,7 +473,7 @@ function AdminApplicationView() {
                     type="button"
                     onClick={handleReject}
                     disabled={busy}
-                    className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                    className="rounded-xl bg-red-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Confirm rejection
                   </button>
@@ -444,10 +482,13 @@ function AdminApplicationView() {
             </div>
           </div>
         ) : (
-          <p className="rounded-xl bg-white p-6 text-sm text-gray-600 shadow">
-            This application is {application.status}, so it can only be viewed.
-            Only VERIFIED or SUBMITTED applications can be changed or decided.
-          </p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="font-semibold text-slate-900">View-only application</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              This application is {application.status}, so it can only be viewed.
+              Only VERIFIED or SUBMITTED applications can be changed or decided.
+            </p>
+          </div>
         )}
       </div>
     </main>

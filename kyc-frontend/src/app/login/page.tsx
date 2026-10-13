@@ -176,7 +176,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => switchMode('otp')}
-              className="w-full text-sm text-blue-600 hover:underline"
+              className="w-full text-sm text-teal-800 hover:underline"
             >
               Change phone number
             </button>
@@ -184,7 +184,7 @@ export default function LoginPage() {
         )}
         <p className="text-center text-sm text-gray-600">
           New here?{' '}
-          <Link href="/register" className="text-blue-600 hover:underline">
+          <Link href="/register" className="text-teal-800 hover:underline">
             Register
           </Link>
         </p>
