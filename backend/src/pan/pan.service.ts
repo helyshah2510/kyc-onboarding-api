@@ -28,7 +28,7 @@ export class PanService {
     const holder = HOLDER_TYPES[letter];
 
     if (!holder) {
-      return this.fail('Unknown holder type');
+      return this.fail('Invalid PAN: the 4th character is not a valid holder type');
     }
 
     if (holder !== selectedHolderType) {

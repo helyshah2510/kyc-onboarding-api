@@ -36,7 +36,7 @@ function HeaderContent() {
           <div className="w-8 h-8 rounded-lg bg-teal-800 text-white flex items-center justify-center font-bold text-sm tracking-tight shadow-xs group-hover:bg-teal-700 transition">
             KYC
           </div>
-          <span className="font-semibold text-gray-900 tracking-tight text-base sm:text-lg">
+          <span className="font-semibold text-slate-900 tracking-tight text-base sm:text-lg">
             KYC Portal
           </span>
         </Link>
@@ -66,8 +66,8 @@ function HeaderContent() {
               <Link
                 href="/dashboard"
                 className={`font-medium transition px-2.5 py-1.5 rounded-md ${pathname === '/dashboard'
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'text-teal-800 bg-teal-50'
+                    : 'text-gray-600 hover:text-slate-900 hover:bg-gray-100'
                   }`}
               >
                 Dashboard
@@ -75,8 +75,8 @@ function HeaderContent() {
               <Link
                 href="/kyc/new"
                 className={`font-medium transition px-2.5 py-1.5 rounded-md ${pathname === '/kyc/new'
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'text-teal-800 bg-teal-50'
+                    : 'text-gray-600 hover:text-slate-900 hover:bg-gray-100'
                   }`}
               >
                 New KYC
@@ -94,8 +94,8 @@ function HeaderContent() {
               <Link
                 href="/login"
                 className={`font-medium transition px-3 py-1.5 rounded-md ${pathname === '/login'
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'text-teal-800 bg-teal-50'
+                    : 'text-gray-600 hover:text-slate-900 hover:bg-gray-100'
                   }`}
               >
                 Login

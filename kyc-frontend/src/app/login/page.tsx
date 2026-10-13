@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/src/lib/api';
-import{saveToken,getRole} from '@/src/lib/auth';
+import { saveToken, getRole } from '@/src/lib/auth';
 
 type Mode = 'password' | 'otp';
 
@@ -84,19 +84,24 @@ export default function LoginPage() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900';
+    'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder focus focus focus/10';
   const buttonClass =
-    'w-full rounded-lg bg-blue-600 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50';
+    'w-full rounded-xl bg-teal-800 py-3 text-sm font-semibold text-white transition hover focus-visible focus-visible focus-visible disabled disabled';
   const tabClass = (active: boolean) =>
-    `flex-1 py-2 text-sm font-medium border-b-2 ${active
-      ? 'border-blue-600 text-blue-600'
-      : 'border-transparent text-gray-500 hover:text-gray-700'
+    `flex-1 border-b-2 py-3 text-sm font-semibold transition ${active
+      ? 'border-teal-800 text-teal-800'
+      : 'border-transparent text-slate-500 hover:text-teal-800'
     }`;
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm space-y-4 rounded-xl bg-white p-6 shadow">
-        <h1 className="text-2xl font-bold text-gray-900">Login</h1>
+    <main className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
+      <div className="w-full max-w-md space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          Welcome back
+        </h1>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          Sign in to continue to your KYC application.
+        </p>
         <div className="flex">
           <button type="button" onClick={() => switchMode('password')} className={tabClass(mode === 'password')}>
             Password
@@ -171,7 +176,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => switchMode('otp')}
-              className="w-full text-sm text-blue-600 hover:underline"
+              className="w-full text-sm text-teal-800 hover:underline"
             >
               Change phone number
             </button>
@@ -179,7 +184,7 @@ export default function LoginPage() {
         )}
         <p className="text-center text-sm text-gray-600">
           New here?{' '}
-          <Link href="/register" className="text-blue-600 hover:underline">
+          <Link href="/register" className="text-teal-800 hover:underline">
             Register
           </Link>
         </p>

@@ -143,21 +143,33 @@ function KycForm() {
         });
     }
 
+
     const inputClass =
-        'w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900';
+        'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-700 focus:ring-2 focus:ring-teal-700/10';
+
     const buttonClass =
-        'w-full rounded-lg bg-blue-600 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50';
+        'w-full rounded-xl bg-teal-800 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-800 disabled:cursor-not-allowed disabled:opacity-50';
+
 
     if (pageLoading) {
-        return <main className="p-8 text-gray-600">Loading...</main>;
+        return (
+            <main className="flex flex-1 items-center justify-center px-4 py-12">
+                <p className="text-sm text-slate-500">Loading your KYC details...</p>
+            </main>
+        );
     }
 
     if (loadError || !application) {
         return (
-            <main className="min-h-screen bg-gray-50 px-4 py-8">
-                <div className="mx-auto max-w-md space-y-3 rounded-xl bg-white p-6 shadow">
-                    <p className="text-red-600">{loadError || 'Application not found'}</p>
-                    <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
+            <main className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
+                <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                    <p className="text-sm text-red-700">
+                        {loadError || 'Application not found'}
+                    </p>
+                    <Link
+                        href="/dashboard"
+                        className="text-sm font-medium text-teal-800 hover:underline"
+                    >
                         Back to dashboard
                     </Link>
                 </div>
@@ -170,13 +182,15 @@ function KycForm() {
 
     if (!editable) {
         return (
-            <main className="min-h-screen bg-gray-50 px-4 py-8">
-                <div className="mx-auto max-w-md space-y-3 rounded-xl bg-white p-6 shadow">
-                    <p className="text-gray-700">
-                        This application can no longer be changed (status:{' '}
-                        {application.status}).
+            <main className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
+                <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                    <p className="text-sm leading-6 text-slate-600">
+                        This application can no longer be changed. Current status:{' '}
+                        <span className="font-semibold text-slate-900">
+                            {application.status}
+                        </span>
                     </p>
-                    <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
+                    <Link href="/dashboard" className="text-sm text-teal-800 hover:underline">
                         Back to dashboard
                     </Link>
                 </div>
@@ -187,31 +201,51 @@ function KycForm() {
     return (
         <main className="min-h-screen bg-gray-50 px-4 py-8">
             <div className="mx-auto max-w-md space-y-6 rounded-xl bg-white p-6 shadow">
-                <h1 className="text-2xl font-bold text-gray-900">Your KYC details</h1>
+
+                <div>
+                    <p className="text-sm font-semibold text-teal-800">
+                        IDENTITY VERIFICATION
+                    </p>
+                    <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                        Your KYC details
+                    </h1>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                        Review your information, upload your Aadhaar image, and submit your application.
+                    </p>
+                </div>
+
 
                 {application.status === 'REJECTED' && application.rejectionReason && (
-                    <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                        Your KYC was rejected. Reason: {application.rejectionReason}
+
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                        <p className="text-sm font-semibold text-red-900">
+                            Changes required
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-red-800">
+                            Your KYC was rejected. Reason: {application.rejectionReason}
+                        </p>
                     </div>
                 )}
 
-                <dl className="space-y-2 rounded-lg bg-gray-50 p-4 text-sm">
+
+                <dl className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm sm:p-5">
+
                     <div>
-                        <dt className="text-gray-500">Name</dt>
-                        <dd className="font-medium text-gray-900">{application.name}</dd>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Name</dt>
+                        <dd className="mt-1 font-medium text-slate-900">{application.name}</dd>
                     </div>
                     <div>
-                        <dt className="text-gray-500">PAN</dt>
-                        <dd className="font-medium text-gray-900">{application.pan}</dd>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">PAN</dt>
+                        <dd className="mt-1 font-medium text-slate-900">{application.pan}</dd>
                     </div>
                     <div>
-                        <dt className="text-gray-500">Phone</dt>
-                        <dd className="font-medium text-gray-900">{application.phone}</dd>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Phone</dt>
+                        <dd className="mt-1 font-medium text-slate-900">{application.phone}</dd>
                     </div>
                 </dl>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Address</label>
+                    <label className="text-sm font-semibold text-slate-700"> Address </label>
                     <textarea
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
@@ -221,9 +255,12 @@ function KycForm() {
                 </div>
 
                 <form onSubmit={handleUpload} className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-semibold text-slate-700">
                         Aadhaar image (PNG)
                     </label>
+                    <p className="text-xs leading-5 text-slate-500">
+                        Upload a PNG image up to 5 MB.
+                    </p>
                     <input
                         key={fileInputKey}
                         type="file"
@@ -234,16 +271,22 @@ function KycForm() {
                     <button
                         type="submit"
                         disabled={busy || !file}
-                        className="w-full rounded-lg border border-blue-600 py-2 font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                        className="w-full rounded-xl border border-teal-800 py-3 text-sm font-semibold text-teal-800 transition hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {busy ? 'Working...' : 'Upload Aadhaar'}
                     </button>
                     {uploadedName && (
-                        <p className="text-sm text-green-700">Uploaded: {uploadedName}</p>
+                        <p className="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
+                            Uploaded: {uploadedName}
+                        </p>
                     )}
                 </form>
 
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && (
+                    <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        {error}
+                    </p>
+                )}
 
                 <button
                     type="button"

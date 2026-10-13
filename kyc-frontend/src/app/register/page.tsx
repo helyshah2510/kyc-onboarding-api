@@ -75,17 +75,24 @@ export default function RegisterPage() {
     }
 
     const inputClass =
-        'w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900';
+        'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder focus focus focus/10';
     const buttonClass =
-        'w-full rounded-lg bg-blue-600 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50';
-    const linkButtonClass = 'w-full text-sm text-blue-600 hover:underline';
+        'w-full rounded-xl bg-teal-800 py-3 text-sm font-semibold text-white transition hover focus-visible focus-visible focus-visible disabled disabled';
+    const linkButtonClass = 'w-full text-sm font-medium text-teal-800 transition hover hover';
 
     return (
-        <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-            <div className="w-full max-w-sm space-y-4 rounded-xl bg-white p-6 shadow">
-                <h1 className="text-2xl font-bold text-gray-900">Register</h1>
+        <main className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
+            <div className="w-full max-w-md space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                    Create your account
+                </h1>
+                <p className="text-sm leading-6 text-slate-500">
+                    Register to begin your identity verification.
+                </p>
                 {step < 4 && (
-                    <p className="text-sm text-gray-500">Step {step} of 3</p>
+                    <p className="text-sm font-medium text-teal-800">
+                        Step {step} of 3
+                    </p>
                 )}
 
                 {step === 1 && (
@@ -173,10 +180,12 @@ export default function RegisterPage() {
                 )}
                 {step === 4 && (
                     <div className="space-y-4 text-center">
-                        <p className="text-green-700">Your account has been created. you can log in now</p>
+                        <p className="text-sm font-medium text-teal-800">
+                            Your account has been created. You can log in now.
+                        </p>
                         <Link
                             href="/login"
-                            className="block w-full rounded-lg bg-blue-600 py-2 font-medium text-white hover:bg-blue-700"
+                            className="block w-full rounded-lg bg-teal-50 py-2 font-medium text-white hover:bg-blue-700"
                         >
                             Go to login
                         </Link>
@@ -185,7 +194,7 @@ export default function RegisterPage() {
                 {step < 4 && (
                     <p className="text-center text-sm text-gray-600">
                         Already registered?{' '}
-                        <Link href="/login" className="text-blue-600 hover:underline">
+                        <Link href="/login" className="text-teal-800 hover:underline">
                             Login
                         </Link>
                     </p>
