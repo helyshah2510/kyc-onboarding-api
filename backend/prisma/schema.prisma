@@ -30,8 +30,9 @@ model KycApplication {
   updatedAt       DateTime          @updatedAt
   rejectionReason String?
 
-  phoneOtps    PhoneOtp[]
-  kycDocuments KycDocument[]
+  phoneOtps     PhoneOtp[]
+  kycDocuments  KycDocument[]
+  notifications Notification[]
 }
 
 model PhoneOtp {
@@ -85,8 +86,9 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  applications KycApplication[]
-  loginOtp     LoginOtp?
+  applications  KycApplication[]
+  loginOtp      LoginOtp?
+  notifications Notification[]
 }
 
 model PendingRegistration {
@@ -122,4 +124,19 @@ model AuditLog {
 
   @@index([applicationId])
   @@index([adminId])
+}
+
+model Notification {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  applicationId Int
+  message       String
+  readAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application KycApplication @relation(fields: [applicationId], references: [id])
+
+  @@index([userId, readAt])
+  @@index([applicationId])
 }

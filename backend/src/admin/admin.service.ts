@@ -10,7 +10,7 @@ import { AuditService } from './audit-log/audit.service.js';
 export class AdminService {
     constructor(
         private prisma: PrismaService,
-        private documentsServicce: DocumentsService,
+        private documentsService: DocumentsService,
         private notificationsService: NotificationsService,
         private auditService: AuditService,
     ) { }
@@ -55,6 +55,10 @@ export class AdminService {
                 kycDocuments: {
                     select: { id: true, documentType: true, fileName: true, uploadedAt: true },
                 },
+                notifications: {
+                    select: { id: true, message: true, createdAt: true, readAt: true },
+                    orderBy: { createdAt: 'desc' },
+                },
             },
         });
         if (!application) {
@@ -91,8 +95,9 @@ export class AdminService {
             previousStatus: application.status,
         });
 
-        this.notificationsService.send(
-            application.user,
+        await this.notificationsService.send(
+            application.userId,
+            id,
             'your Kyc application has been approved',
         )
         return updated;
@@ -107,10 +112,12 @@ export class AdminService {
 
         await this.auditService.record(adminId, 'APPLICATION_REJECTED', id, {
             previousStatus: application.status,
+            reason,
         })
 
         this.notificationsService.send(
-            application.user,
+            application.userId,
+            id,
             `Your KYC application has been rejected. Reason: ${reason}`,
         );
         return updated;
@@ -123,7 +130,7 @@ export class AdminService {
             where: { id },
             data: { address: newAddress },
         });
-        await this.auditService.record(adminId, 'ADDRESS_UPDATED', id,{
+        await this.auditService.record(adminId, 'ADDRESS_UPDATED', id, {
             oldAddress: application.address,
             newAddress,
         });
@@ -132,7 +139,7 @@ export class AdminService {
 
     async replaceDocuments(id: number, file: Express.Multer.File, adminId: number) {
         await this.getReviewableApplication(id);
-        const document = await this.documentsServicce.saveAdhaarFile(id, file);
+        const document = await this.documentsService.saveAdhaarFile(id, file);
         await this.auditService.record(adminId, 'DOCUMENT_REPLACED', id, {
             newFileName: document.fileName,
         });
@@ -152,6 +159,7 @@ export class AdminService {
         }
         //1. Database first, all or nothing
         await this.prisma.$transaction([
+            this.prisma.notification.deleteMany({ where: { applicationId: id } }),
             this.prisma.phoneOtp.deleteMany({ where: { applicationId: id } }),
             this.prisma.kycDocument.deleteMany({ where: { applicationId: id } }),
             this.prisma.kycApplication.deleteMany({ where: { id } }),

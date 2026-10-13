@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getRole, logout } from '@/src/lib/auth';
+import { NotificationBell } from './NotificationBell';
 
 
 export function Header() {
@@ -88,6 +89,7 @@ function HeaderContent() {
               >
                 Logout
               </button>
+              <NotificationBell refreshKey={pathname} />
             </>
           ) : (
             <>

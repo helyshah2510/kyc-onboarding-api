@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/src/lib/api";
 import { getRole, logout } from "@/src/lib/auth";
+import { ResultPopup } from '../components/ResultPopup';
 
 type Application = {
     id: number;
@@ -88,6 +89,7 @@ export default function DashboardPage() {
 
     return (
         <main className="flex flex-1 justify-center px-4 py-10 sm:px-6">
+            <ResultPopup/>
             <div className="w-full max-w-3xl space-y-8">
                 <div className="flex items-center justify-between">
                     <div>
