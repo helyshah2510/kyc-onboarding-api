@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api } from "@/src/lib/api";
 import { getRole, logout } from "@/src/lib/auth";
 import { ResultPopup } from '../components/ResultPopup';
+import { FileCheck,ArrowRight } from 'lucide-react';
 
 type Application = {
     id: number;
@@ -89,7 +90,7 @@ export default function DashboardPage() {
 
     return (
         <main className="flex flex-1 justify-center px-4 py-10 sm:px-6">
-            <ResultPopup/>
+            <ResultPopup />
             <div className="w-full max-w-3xl space-y-8">
                 <div className="flex items-center justify-between">
                     <div>
@@ -104,22 +105,33 @@ export default function DashboardPage() {
 
                 {loading && <p className="text-gray-600">Loading...</p>}
                 {error && <p className="text-sm text-red-600">{error}</p>}
+
                 {!loading && !error && !application && (
-                    <div className="inline-flex items-center justify-center rounded-xl bg-teal-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700">
-                        <h2 className="text-lg font-semibold text-slate-900">
-                            You have not started your KYC yet
-                        </h2>
-                        <p className="text-gray-600">
-                            Enter your PAN to begin. It takes a few minutes.
-                        </p>
+                    <div className="flex flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm sm:px-10">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-50 text-teal-800">
+                            <FileCheck size={32} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <h2 className="text-xl font-semibold text-slate-900">
+                                Start your KYC verification
+                            </h2>
+                            <p className="mx-auto max-w-md text-sm leading-6 text-slate-600">
+                                You haven't started a KYC application yet.
+                                Enter your PAN to begin. It only takes a few minutes.
+                            </p>
+                        </div>
+
                         <Link
                             href="/kyc/new"
-                            className="inline-block rounded-lg bg-teal-800 px-5 py-2 font-medium text-white hover:bg-blue-700"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:ring-offset-2"
                         >
                             Start KYC
+                            <ArrowRight size={16} />
                         </Link>
                     </div>
                 )}
+
                 {application && info && (
                     <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                         <div className="flex items-center justify-between">
