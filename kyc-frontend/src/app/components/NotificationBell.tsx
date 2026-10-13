@@ -25,11 +25,27 @@ export function NotificationBell({ refreshKey }: { refreshKey?: string | null })
 
     // load now, on every page change, and every 30 seconds
     useEffect(() => {
-        load();
-        const timer = setInterval(load, 30000);
+        void load();
+
+        const timer = setInterval(() => {
+            void load();
+        }, 30000);
+
+        const handleNotificationsChanged = () => {
+            void load();
+        };
+
+        window.addEventListener(
+            'notifications-changed',
+            handleNotificationsChanged,
+        );
+
         return () => {
             clearInterval(timer);
-            window.removeEventListener('notifications changed ', load);
+            window.removeEventListener(
+                'notifications-changed',
+                handleNotificationsChanged,
+            );
         };
     }, [load, refreshKey]);
 
