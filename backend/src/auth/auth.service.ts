@@ -10,6 +10,9 @@ import bcrypt from 'bcrypt';
 import { RequestLoginDto } from './dto/request-login-otp.dto.js';
 import { VerifyLoginOtpDto } from './dto/verify-login-otp.dto.js';
 
+const MAX_REGISTRATION_OTP_ATTEMPTS = 5;
+const registrationOtpAttempts = new Map<number, number>();
+
 @Injectable()
 export class AuthService {
     constructor(
@@ -40,6 +43,13 @@ export class AuthService {
         const otp = randomInt(100000, 1000000).toString();
         const otpHash = await bcrypt.hash(otp, 10);
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        const oldPending = await this.prisma.pendingRegistration.findMany({
+            where: { OR: [{ email: dto.email }, { phone: dto.phone }] },
+            select: { id: true },
+        });
+        for (const p of oldPending) {
+            registrationOtpAttempts.delete(p.id);
+        }
         await this.prisma.pendingRegistration.deleteMany({
             where: { OR: [{ email: dto.email }, { phone: dto.phone }] },
         });
@@ -69,13 +79,37 @@ export class AuthService {
         }
 
         if (pending.expiresAt < new Date()) {
+            registrationOtpAttempts.delete(pending.id);
             throw new BadRequestException('Otp has been expired please generate the new one');
+        }
+
+        const currentAttempts = registrationOtpAttempts.get(pending.id) ?? 0;
+        if (currentAttempts >= MAX_REGISTRATION_OTP_ATTEMPTS) {
+            throw new BadRequestException(
+                'Too many wrong attempts. Please request a new OTP',
+            );
         }
 
         const isCorrect = await bcrypt.compare(dto.otp, pending.otpHash);
         if (!isCorrect) {
-            throw new BadRequestException('Entered otp is not correct');
+            const nextAttempts = currentAttempts + 1;
+            registrationOtpAttempts.set(pending.id, nextAttempts);
+
+            if (nextAttempts >= MAX_REGISTRATION_OTP_ATTEMPTS) {
+                registrationOtpAttempts.delete(pending.id);
+                await this.prisma.pendingRegistration.delete({ where: { id: pending.id } });
+                throw new BadRequestException(
+                    'Too many wrong attempts. Please request a new OTP',
+                );
+            }
+
+            const left = MAX_REGISTRATION_OTP_ATTEMPTS - nextAttempts;
+            throw new BadRequestException(
+                `Entered otp is not correct. ${left} attempt${left === 1 ? '' : 's'} left`,
+            );
         }
+
+        registrationOtpAttempts.delete(pending.id);
 
         await this.prisma.pendingRegistration.update({
             where: { id: pending.id },
