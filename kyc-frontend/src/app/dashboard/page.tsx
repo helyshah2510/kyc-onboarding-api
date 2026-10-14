@@ -92,13 +92,13 @@ export default function DashboardPage() {
                 }
             }
         };
-        fetchApplication();
+        void fetchApplication();
 
-        const intervalId = setInterval(fetchApplication, 5000);
+        window.addEventListener('notifications-changed', fetchApplication);
 
         return () => {
             isActive = false;
-            clearInterval(intervalId);
+            window.removeEventListener('notifications-changed', fetchApplication);
         };
     }, [router]);
 
