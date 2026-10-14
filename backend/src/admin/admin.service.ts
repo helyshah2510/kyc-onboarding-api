@@ -115,7 +115,7 @@ export class AdminService {
             reason,
         })
 
-        this.notificationsService.send(
+        await this.notificationsService.send(
             application.userId,
             id,
             `Your KYC application has been rejected. Reason: ${reason}`,
