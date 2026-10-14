@@ -11,7 +11,6 @@ type AppNotification = {
 };
 
 export function ResultPopup() {
-    console.log('ResultPopup is running');
     const [item, setItem] = useState<AppNotification | null>(null);
 
     useEffect(() => {
