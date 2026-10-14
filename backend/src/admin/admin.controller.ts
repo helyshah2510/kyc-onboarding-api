@@ -38,7 +38,7 @@ export class AdminController {
         const file= createReadStream(document.filePath);
         return new StreamableFile(file,{
             type:'image/png',
-            disposition:`inline; filename="${document.fileName} "`,
+            disposition:`inline; filename="${document.fileName}"`,
         });
     }
 

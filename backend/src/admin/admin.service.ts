@@ -145,7 +145,13 @@ export class AdminService {
         });
         return {
             message: 'Document replaced successfully',
-            document,
+            document: {
+                id: document.id,
+                applicationId: document.applicationId,
+                documentType: document.documentType,
+                fileName: document.fileName,
+                uploadedAt: document.uploadedAt,
+            },
         };
     }
 

@@ -33,7 +33,13 @@ export class DocumentsService {
         return {
             success: true,
             message: 'Document uploaded successfully',
-            document,
+            document: {
+                id: document.id,
+                applicationId: document.applicationId,
+                documentType: document.documentType,
+                fileName: document.fileName,
+                uploadedAt: document.uploadedAt,
+            },
         };
     }
     // SHARED photocopier: no permission checks here, the caller must do them first
