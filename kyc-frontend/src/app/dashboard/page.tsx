@@ -6,7 +6,7 @@ import Link from "next/link";
 import { api } from "@/src/lib/api";
 import { getRole, logout } from "@/src/lib/auth";
 import { ResultPopup } from '../components/ResultPopup';
-import { FileCheck,ArrowRight } from 'lucide-react';
+import { FileCheck, ArrowRight } from 'lucide-react';
 
 type Application = {
     id: number;
@@ -66,23 +66,40 @@ export default function DashboardPage() {
             return;
         }
 
-        api<Application[]>('/applications')
-            .then((list) => {
+        let isActive = true;
+        const fetchApplication = async () => {
+            try {
+                const list = await api<Application[]>('/applications');
+                if (!isActive) return;
                 const latest = [...list].sort(
                     (a, b) =>
                         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
                 )[0];
                 setApplication(latest ?? null);
-            })
-            .catch((err) => {
+                setError('');
+            } catch (err) {
+                if (!isActive) return;
+
                 if (err instanceof Error && err.message === 'Unauthorized') {
                     logout();
                     router.replace('/login');
                     return;
                 }
                 setError(err instanceof Error ? err.message : 'Something went wrong')
-            })
-            .finally(() => setLoading(false));
+            } finally {
+                if (isActive) {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchApplication();
+
+        const intervalId = setInterval(fetchApplication, 5000);
+
+        return () => {
+            isActive = false;
+            clearInterval(intervalId);
+        };
     }, [router]);
 
     const info = application ? statusInfo[application.status] : null;

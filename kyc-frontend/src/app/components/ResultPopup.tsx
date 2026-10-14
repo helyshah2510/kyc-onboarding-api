@@ -38,6 +38,7 @@ export function ResultPopup() {
 
                 if (newItem) {
                     setItem(newItem);
+                    window.dispatchEvent(new Event('notifications-changed'));
                 }
             } catch {
                 // Keep the dashboard usable if notifications cannot be fetched.

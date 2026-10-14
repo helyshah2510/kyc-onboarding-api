@@ -50,6 +50,19 @@ export class ApplicationsService {
 
     async createApplication(userId: number, pan: string, holderType: HolderType) {
         const panResult = await this.panService.validatePan(pan, holderType);
+        const existingApplications= await this.prisma.kycApplication.findFirst({
+            where:{
+                userId,
+                pan:pan.trim().toUpperCase(),
+                status:{
+                    not:'REJECTED',
+                },
+            },
+        });
+
+        if(existingApplications){
+            throw  new BadRequestException('this application already exist');
+        }
 
         if (!panResult.verified) {
             throw new BadRequestException(
